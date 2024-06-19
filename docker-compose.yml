@@ -1,0 +1,55 @@
+services:
+  ollama:
+    image: ollama/ollama
+    volumes:
+      - ./ollama/ollama:/root/.ollama
+      - ./ollama_entrypoint.sh:/entrypoint.sh
+    entrypoint: ["/usr/bin/bash", "/entrypoint.sh"]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+  server:
+    build:
+      context: backend
+    ports:
+      - "8000:8000"
+
+  ui:
+    build:
+      context: frontend
+    ports:
+      - "8080:8080" 
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    restart: always
+    container_name: qdrant
+    ports:
+      - 6333:6333
+      - 6334:6334
+    expose:
+      - 6333
+      - 6334
+      - 6335
+    configs:
+      - source: qdrant_config
+        target: /qdrant/config/production.yaml
+    volumes:
+      - ./qdrant_data:/qdrant/storage
+
+configs:
+  qdrant_config:
+    content: |
+      log_level: INFO
+
+
+
+
+
+
+
+
