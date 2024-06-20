@@ -38,7 +38,7 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-This is a web application for answering questions about the [Polars](https://pola.rs/) Python library. 
+This is a RAG application for answering questions about the [Polars](https://pola.rs/) Python library. This project uses the Qdrant vector database for storing document embeddings, Ollama for interacting with local LLMs, Litestar for the backend API, Shiny for the frontend ui. 
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -46,12 +46,12 @@ This is a web application for answering questions about the [Polars](https://pol
 
 ### Built With
 
-* Qdrant
-* Langchain
-* Llama-index
-* Ollama
-* Shiny
-* Litestar
+* [![Qdrant]][Qdrant-url]
+* [![Langchain][Langchain-logo]][Langchain-url]
+* [![Llama-index]][Llama-index-url]
+* [![Ollama]][Ollama-url]
+* [![Shiny]][Shiny-url]
+* [![Litestar]][Litestar-url]
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -60,8 +60,7 @@ This is a web application for answering questions about the [Polars](https://pol
 <!-- GETTING STARTED -->
 ## Getting Started
 
-This is an example of how you may give instructions on setting up your project locally.
-To get a local copy up and running follow these simple example steps.
+To get a local copy up and running follow these simple steps.
 
 ### Prerequisites
 
@@ -104,3 +103,15 @@ Navigate to `http://localhost:8080` in your browser and start asking questions.
 
 <!-- MARKDOWN LINKS & IMAGES -->
 
+[Qdrant]: https://img.shields.io/badge/Qdrant-black?style=for-the-badge
+[Qdrant-url]: https://qdrant.tech/
+[Langchain-url]: https://www.langchain.com/
+[Langchain-logo]: https://img.shields.io/badge/langchain-1C3C3C?style=for-the-badge&logo=langchain
+[Llama-index]: https://img.shields.io/badge/Llamaindex-black?style=for-the-badge
+[Llama-index-url]: https://www.llamaindex.ai/
+[Ollama]: https://img.shields.io/badge/Ollama-black?style=for-the-badge
+[Ollama-url]: https://www.ollama.com/
+[Shiny]: https://img.shields.io/badge/Shiny-black?style=for-the-badge
+[Shiny-url]: https://shiny.posit.co/py/
+[Litestar]: https://img.shields.io/badge/Litestar-black?style=for-the-badge
+[Litestar-url]: https://litestar.dev/
