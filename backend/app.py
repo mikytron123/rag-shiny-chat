@@ -53,6 +53,6 @@ async def post_llm(data: Parameters) -> dict[str, str]:
     ans = chain.invoke({"input": data.prompt})
     return {"completion": ans["answer"]}
 
-
-load_db()
-app = Litestar([post_llm])
+if __name__ == "__main__":
+    load_db()
+    app = Litestar([post_llm])

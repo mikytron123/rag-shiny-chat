@@ -1,9 +1,7 @@
 from shiny import App, ui, reactive, render, Inputs, Outputs, Session
 import requests
 
-
 choices_dict = requests.get("http://server:8000/models").json()
-
 
 app_ui = ui.page_fluid(
     ui.panel_title("LLM RAG chat bot"),
@@ -41,4 +39,5 @@ def server(input: Inputs, output: Outputs, session: Session) -> None:
         return req["completion"]
 
 
-app = App(app_ui, server)
+if __name__ == "__main__":
+    app = App(app_ui, server)

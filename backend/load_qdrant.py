@@ -3,12 +3,11 @@ from llama_index.core.node_parser import MarkdownNodeParser
 from sentence_transformers import SentenceTransformer
 from qdrant_client import QdrantClient, models
 from qdrant_client.models import Distance, VectorParams
-
+from constants import collection_name
 
 def load_db():
 
     client = QdrantClient(url="http://qdrant:6333")
-    collection_name = "document_collection"
     if client.collection_exists(collection_name):
         return
 

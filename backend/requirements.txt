@@ -1,8 +1,8 @@
-litestar[standard]
+litestar
 langchain
 langchain-community
 langchain-qdrant
 langchain-huggingface
 sentence-transformers
 llama-index
-
+requests
