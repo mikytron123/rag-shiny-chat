@@ -1,7 +1,10 @@
 from shiny import App, ui, reactive, render, Inputs, Outputs, Session
 import requests
+import os
 
-choices_dict = requests.get("http://server:8000/models").json()
+SERVER_HOST = os.getenv("SERVER_HOST")
+
+choices_dict = requests.get(f"http://{SERVER_HOST}:8000/models").json()
 
 app_ui = ui.page_fluid(
     ui.panel_title("LLM RAG chat bot"),
@@ -27,6 +30,7 @@ app_ui = ui.page_fluid(
 
 
 def server(input: Inputs, output: Outputs, session: Session) -> None:
+
     @render.text
     @reactive.event(input.submit_button)
     def llm_output():
@@ -35,7 +39,7 @@ def server(input: Inputs, output: Outputs, session: Session) -> None:
             "temperature": input.input_temp(),
             "prompt": input.input_prompt(),
         }
-        req = requests.post("http://server:8000/llm", json=payload).json()
+        req = requests.post(f"http://{SERVER_HOST}:8000/llm", json=payload).json()
         return req["completion"]
 
 

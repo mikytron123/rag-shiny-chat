@@ -37,9 +37,6 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=bind,source=requirements.txt,target=requirements.txt \
     python -m pip install -r requirements.txt
 
-
-
-
 # Switch to the non-privileged user to run the application.
 USER appuser
 
@@ -49,12 +46,7 @@ COPY . .
 # Expose the port that the application listens on.
 EXPOSE 8000
 
-ENV HF_HOME=/tmp
-
 RUN python3 load_embedding_model.py
-# RUN python3 load_qdrant.py
-
-
 
 # Run the application.
 CMD litestar run --host 0.0.0.0 --port 8000

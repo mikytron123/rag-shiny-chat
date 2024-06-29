@@ -11,7 +11,10 @@ from langchain_qdrant import Qdrant
 from constants import system_prompt, collection_name
 from langchain_huggingface import HuggingFaceEmbeddings
 from load_qdrant import load_db
+import os
 
+OLLAMA_HOST = os.getenv("OLLAMA_HOST")
+QDRANT_HOST = os.getenv("QDRANT_HOST")
 
 @dataclass
 class Parameters:
@@ -22,25 +25,23 @@ class Parameters:
 
 @get("models")
 async def get_models() -> dict[str, str]:
-    models_req = requests.get("http://ollama:11434/api/tags").json()
+    models_req = requests.get(f"http://{OLLAMA_HOST}:11434/api/tags").json()
     choices_dict = {dd["name"]: dd["name"] for dd in models_req["models"]}
     return choices_dict
 
 
 @post("/llm")
 async def post_llm(data: Parameters) -> dict[str, str]:
-    embeddings = HuggingFaceEmbeddings(
-        model_name="/tmp/models--BAAI--bge-small-en-v1.5/snapshots/5c38ec7c405ec4b44b94cc5a9bb96e735b38267a"
-    )
+    embeddings = HuggingFaceEmbeddings(model_name="BAAI/bge-small-en-v1.5")
     qdrant = Qdrant.from_existing_collection(
         embedding=embeddings,
         collection_name=collection_name,
-        url="http://qdrant:6333",
+        url=f"http://{QDRANT_HOST}:6333",
         content_payload_key="text",
     )
     retriever = qdrant.as_retriever(search_kwargs={"k": 4})
     llm = Ollama(
-        base_url="http://ollama:11434", model="gemma:2b", temperature=data.temperature
+        base_url=f"http://{OLLAMA_HOST}:11434", model=data.model, temperature=data.temperature
     )
     prompt = ChatPromptTemplate.from_messages(
         [
@@ -53,6 +54,7 @@ async def post_llm(data: Parameters) -> dict[str, str]:
     ans = chain.invoke({"input": data.prompt})
     return {"completion": ans["answer"]}
 
-if __name__ == "__main__":
-    load_db()
-    app = Litestar([post_llm])
+
+
+load_db()
+app = Litestar([post_llm])

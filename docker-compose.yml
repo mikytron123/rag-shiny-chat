@@ -5,6 +5,7 @@ services:
       - ./ollama/ollama:/root/.ollama
       - ./ollama_entrypoint.sh:/entrypoint.sh
     entrypoint: ["/usr/bin/bash", "/entrypoint.sh"]
+    env_file: ".env"
     deploy:
       resources:
         reservations:
@@ -17,6 +18,7 @@ services:
       context: backend
     ports:
       - "8000:8000"
+    env_file: ".env"
     deploy:
       resources:
         reservations:
@@ -29,7 +31,8 @@ services:
     build:
       context: frontend
     ports:
-      - "8080:8080" 
+      - "8080:8080"
+    env_file: ".env"
 
   qdrant:
     image: qdrant/qdrant:latest

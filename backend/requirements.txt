@@ -1,8 +1,8 @@
-litestar
+litestar[standard]
 langchain
 langchain-community
 langchain-qdrant
 langchain-huggingface
 sentence-transformers
-llama-index
+llama-index-core
 requests

@@ -8,8 +8,8 @@ pid=$!
 # Pause for Ollama to start.
 sleep 5
 
-echo "🔴 Retrieve gemma model..."
-ollama pull gemma:2b
+echo "🔴 Retrieving model..."
+ollama pull $LLM
 echo "🟢 Done!"
 
 # Wait for Ollama process to finish.
