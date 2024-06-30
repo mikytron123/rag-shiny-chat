@@ -64,7 +64,9 @@ To get a local copy up and running follow these simple steps.
 
 ### Prerequisites
 
-Install Docker
+Install Docker.
+Create a `.env` file using `env.example` as an example.
+LLM environment variable should be set to any ollama model.
 
 ### Installation
 
