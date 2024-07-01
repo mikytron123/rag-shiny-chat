@@ -1,2 +1,2 @@
 shiny
-requests
+httpx

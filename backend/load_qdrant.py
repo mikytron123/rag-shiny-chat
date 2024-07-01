@@ -6,7 +6,7 @@ from qdrant_client.models import Distance, VectorParams
 from constants import collection_name
 import os
 
-QDRANT_HOST = os.getenv("QDRANT_HOST")
+QDRANT_HOST = os.getenv("QDRANT_HOST",default="localhost")
 
 def load_db():
     client = QdrantClient(url=f"http://{QDRANT_HOST}:6333")

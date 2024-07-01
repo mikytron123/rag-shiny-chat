@@ -1,10 +1,12 @@
 from shiny import App, ui, reactive, render, Inputs, Outputs, Session
-import requests
+import httpx
 import os
+import json
+from utils import stream_to_reactive
 
-SERVER_HOST = os.getenv("SERVER_HOST")
+SERVER_HOST = os.getenv("SERVER_HOST",default="localhost")
 
-choices_dict = requests.get(f"http://{SERVER_HOST}:8000/models").json()
+choices_dict = httpx.get(f"http://{SERVER_HOST}:8000/models").json()
 
 app_ui = ui.page_fluid(
     ui.panel_title("LLM RAG chat bot"),
@@ -17,7 +19,7 @@ app_ui = ui.page_fluid(
                 label="Temperature",
                 min=0.0,
                 max=2.0,
-                value=0.8,
+                value=0.0,
                 step=0.1,
             ),
             ui.input_action_button("submit_button", "Submit"),
@@ -31,17 +33,57 @@ app_ui = ui.page_fluid(
 
 def server(input: Inputs, output: Outputs, session: Session) -> None:
 
-    @render.text
+    chunks = reactive.value(tuple())
+    streaming_chat_messages_batch = reactive.value(tuple())
+
+    @reactive.effect()
+    @reactive.event(streaming_chat_messages_batch)
+    async def finalize_streaming_result():
+        current_batch = streaming_chat_messages_batch()
+        for message in current_batch:
+            data_dict = json.loads(message.decode())
+            if data_dict:
+                chunks.set(
+                    chunks()
+                    + (data_dict["completion"],)
+            )
+
+        return
+
+    @reactive.effect()
     @reactive.event(input.submit_button)
-    def llm_output():
+    async def api_call():
+        chunks.set(("",))
         payload = {
             "model": input.model(),
             "temperature": input.input_temp(),
             "prompt": input.input_prompt(),
         }
-        req = requests.post(f"http://{SERVER_HOST}:8000/llm", json=payload).json()
-        return req["completion"]
+        client = httpx.AsyncClient(timeout=120)
+        req = client.build_request("POST",f"http://{SERVER_HOST}:8000/llm/stream",json=payload)
+        r = await client.send(req, stream=True)
+        messages = stream_to_reactive(r)
+        chunks.set(("",))
+
+        @reactive.Effect
+        def copy_messages_to_batch():
+            streaming_chat_messages_batch.set(messages())
+
+    @render.text
+    def llm_output():
+        return "".join(chunks())
+
+    # @render.text
+    # @reactive.event(input.submit_button)
+    # def llm_output():
+    #     payload = {
+    #         "model": input.model(),
+    #         "temperature": input.input_temp(),
+    #         "prompt": input.input_prompt(),
+    #     }
+    #     req = httpx.post(f"http://{SERVER_HOST}:8000/llm", json=payload).json()
+    #     return req["completion"]
 
 
-if __name__ == "__main__":
-    app = App(app_ui, server)
+
+app = App(app_ui, server)
