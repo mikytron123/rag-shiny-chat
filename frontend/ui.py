@@ -27,6 +27,7 @@ app_ui = ui.page_fluid(
             width=400,
         ),
         ui.output_text_verbatim("llm_output", placeholder=True),
+        ui.output_text_verbatim("citation",placeholder=True)
     ),
 )
 
@@ -34,8 +35,9 @@ app_ui = ui.page_fluid(
 def server(input: Inputs, output: Outputs, session: Session) -> None:
 
     chunks = reactive.value(tuple())
+    links = reactive.value(set())
     streaming_chat_messages_batch = reactive.value(tuple())
-
+    
     @reactive.effect()
     @reactive.event(streaming_chat_messages_batch)
     async def finalize_streaming_result():
@@ -43,10 +45,14 @@ def server(input: Inputs, output: Outputs, session: Session) -> None:
         for message in current_batch:
             data_dict = json.loads(message.decode())
             if data_dict:
-                chunks.set(
+                if "completion" in data_dict:
+                    chunks.set(
                     chunks()
                     + (data_dict["completion"],)
-            )
+                    )
+                elif "links" in data_dict:
+                    links.set(links().union(set(data_dict["links"])))
+                    
 
         return
 
@@ -54,6 +60,7 @@ def server(input: Inputs, output: Outputs, session: Session) -> None:
     @reactive.event(input.submit_button)
     async def api_call():
         chunks.set(("",))
+        links.set(set())
         payload = {
             "model": input.model(),
             "temperature": input.input_temp(),
@@ -64,6 +71,7 @@ def server(input: Inputs, output: Outputs, session: Session) -> None:
         r = await client.send(req, stream=True)
         messages = stream_to_reactive(r)
         chunks.set(("",))
+        links.set(set())
 
         @reactive.Effect
         def copy_messages_to_batch():
@@ -72,6 +80,15 @@ def server(input: Inputs, output: Outputs, session: Session) -> None:
     @render.text
     def llm_output():
         return "".join(chunks())
+    
+    @render.text
+    def citation():
+        if len(links())==0:
+            return ""
+        reference = "Citations\n"
+        for link in links():
+            reference += f"- {link}\n"
+        return reference
 
     # @render.text
     # @reactive.event(input.submit_button)

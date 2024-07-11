@@ -30,16 +30,22 @@ class Parameters:
 
 
 def create_chain(data: Parameters) -> Runnable:
-    embeddings = HuggingFaceEmbeddings(model_name="BAAI/bge-small-en-v1.5")
+    encode_kwargs = {"normalize_embeddings": True}
+    embeddings = HuggingFaceEmbeddings(
+        model_name="BAAI/bge-small-en-v1.5", encode_kwargs=encode_kwargs
+    )
     qdrant = Qdrant.from_existing_collection(
         embedding=embeddings,
         collection_name=collection_name,
         url=f"http://{QDRANT_HOST}:6333",
         content_payload_key="text",
+        metadata_payload_key="metadata",
     )
     retriever = qdrant.as_retriever(search_kwargs={"k": 4})
     llm = Ollama(
-        base_url=f"http://{OLLAMA_HOST}:11434", model=data.model, temperature=data.temperature
+        base_url=f"http://{OLLAMA_HOST}:11434",
+        model=data.model,
+        temperature=data.temperature,
     )
     prompt = ChatPromptTemplate.from_messages(
         [
@@ -57,6 +63,10 @@ async def llm_generator(data: Parameters) -> AsyncGenerator[bytes, None]:
     async for chunk in llm.astream({"input": data.prompt}):
         if "answer" in chunk:
             yield encode_json({"completion": chunk["answer"]})
+        elif "context" in chunk:
+            yield encode_json(
+                {"links": [doc.metadata["link"] for doc in chunk["context"]]}
+            )
         else:
             yield encode_json({})
 
