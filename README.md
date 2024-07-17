@@ -39,7 +39,7 @@
 ## About The Project
 [screen-capture (1).webm](https://github.com/mikytron123/rag-shiny-chat/assets/25290130/47d2bef1-d117-4130-b257-4a3809436dba)
 
-This is a RAG application for answering questions about the [Polars](https://pola.rs/) Python library. This project uses the Qdrant vector database for storing document embeddings, Ollama for interacting with local LLMs, Litestar for the backend API, Shiny for the frontend ui. 
+This is a RAG application for answering questions about the [Polars](https://pola.rs/) Python library. This project uses the Weaviate vector database for storing document embeddings, Ollama for interacting with local LLMs, Litestar for the backend API, Shiny for the frontend ui. 
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -47,7 +47,7 @@ This is a RAG application for answering questions about the [Polars](https://pol
 
 ### Built With
 
-* [![Qdrant]][Qdrant-url]
+* [![Weaviate]][Weaviate-url]
 * [![Langchain][Langchain-logo]][Langchain-url]
 * [![Llama-index]][Llama-index-url]
 * [![Ollama]][Ollama-url]
@@ -75,9 +75,9 @@ LLM environment variable should be set to any ollama model.
    ```sh
    git clone https://github.com/mikytron123/rag-shiny-chat
    ```
-2. Run QDrant vector db
+2. Run Weaviate vector db
    ```sh
-   docker compose up qdrant
+   docker compose up weaviate
    ```
 3. Run Ollama
    ```sh
@@ -106,8 +106,8 @@ Navigate to `http://localhost:8080` in your browser and start asking questions.
 
 <!-- MARKDOWN LINKS & IMAGES -->
 
-[Qdrant]: https://img.shields.io/badge/Qdrant-black?style=for-the-badge
-[Qdrant-url]: https://qdrant.tech/
+[Weaviate]: https://img.shields.io/badge/Weaviate-black?style=for-the-badge
+[Weaviate-url]: https://weaviate.io
 [Langchain-url]: https://www.langchain.com/
 [Langchain-logo]: https://img.shields.io/badge/langchain-1C3C3C?style=for-the-badge&logo=langchain
 [Llama-index]: https://img.shields.io/badge/Llamaindex-black?style=for-the-badge
