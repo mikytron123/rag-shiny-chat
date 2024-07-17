@@ -45,7 +45,7 @@ USER appuser
 COPY . .
 
 # Expose the port that the application listens on.
-EXPOSE 8080
+EXPOSE 8070
 
 # Run the application.
-CMD shiny run -p 8080 --host 0.0.0.0 ui.py
+CMD shiny run -p 8070 --host 0.0.0.0 ui.py

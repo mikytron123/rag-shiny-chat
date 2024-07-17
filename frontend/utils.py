@@ -40,9 +40,7 @@ def safe_create_task(task: Coroutine[Any, Any, T]) -> asyncio.Task[T]:
     return t
 
 
-def stream_to_reactive(
-    func
-) -> StreamResult[T]:
+def stream_to_reactive(func) -> StreamResult[T]:
     val: reactive.Value[tuple[T, ...]] = reactive.Value(tuple())
 
     async def task_main():

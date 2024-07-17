@@ -4,7 +4,7 @@ import os
 import json
 from utils import stream_to_reactive
 
-SERVER_HOST = os.getenv("SERVER_HOST",default="localhost")
+SERVER_HOST = os.getenv("SERVER_HOST", default="localhost")
 
 choices_dict = httpx.get(f"http://{SERVER_HOST}:8000/models").json()
 
@@ -27,17 +27,16 @@ app_ui = ui.page_fluid(
             width=400,
         ),
         ui.output_text_verbatim("llm_output", placeholder=True),
-        ui.output_text_verbatim("citation",placeholder=True)
+        ui.output_text_verbatim("citation", placeholder=True),
     ),
 )
 
 
 def server(input: Inputs, output: Outputs, session: Session) -> None:
-
     chunks = reactive.value(tuple())
     links = reactive.value(set())
     streaming_chat_messages_batch = reactive.value(tuple())
-    
+
     @reactive.effect()
     @reactive.event(streaming_chat_messages_batch)
     async def finalize_streaming_result():
@@ -46,13 +45,9 @@ def server(input: Inputs, output: Outputs, session: Session) -> None:
             data_dict = json.loads(message.decode())
             if data_dict:
                 if "completion" in data_dict:
-                    chunks.set(
-                    chunks()
-                    + (data_dict["completion"],)
-                    )
+                    chunks.set(chunks() + (data_dict["completion"],))
                 elif "links" in data_dict:
                     links.set(links().union(set(data_dict["links"])))
-                    
 
         return
 
@@ -67,7 +62,9 @@ def server(input: Inputs, output: Outputs, session: Session) -> None:
             "prompt": input.input_prompt(),
         }
         client = httpx.AsyncClient(timeout=120)
-        req = client.build_request("POST",f"http://{SERVER_HOST}:8000/llm/stream",json=payload)
+        req = client.build_request(
+            "POST", f"http://{SERVER_HOST}:8000/llm/stream", json=payload
+        )
         r = await client.send(req, stream=True)
         messages = stream_to_reactive(r)
         chunks.set(("",))
@@ -80,10 +77,10 @@ def server(input: Inputs, output: Outputs, session: Session) -> None:
     @render.text
     def llm_output():
         return "".join(chunks())
-    
+
     @render.text
     def citation():
-        if len(links())==0:
+        if len(links()) == 0:
             return ""
         reference = "Citations\n"
         for link in links():
@@ -100,7 +97,6 @@ def server(input: Inputs, output: Outputs, session: Session) -> None:
     #     }
     #     req = httpx.post(f"http://{SERVER_HOST}:8000/llm", json=payload).json()
     #     return req["completion"]
-
 
 
 app = App(app_ui, server)

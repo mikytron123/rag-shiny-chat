@@ -46,7 +46,5 @@ COPY . .
 # Expose the port that the application listens on.
 EXPOSE 8000
 
-RUN python3 load_embedding_model.py
-
 # Run the application.
 CMD litestar run --host 0.0.0.0 --port 8000
