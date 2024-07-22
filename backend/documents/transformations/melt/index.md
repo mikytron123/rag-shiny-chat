@@ -1,21 +1,9 @@
 # Melts
-
-
 Melt operations unpivot a DataFrame from wide format to long format
-
-
 ## Dataset
-
-
-
-
-
  
-
 ```python
-
 import polars as pl
-
 df = pl.DataFrame(
     {
         "A": ["a", "b", "a"],
@@ -25,54 +13,15 @@ df = pl.DataFrame(
     }
 )
 print(df)
-
 ```
-
-
-
-
-
  
-
-
-
-
-
-
-
-
-
-
 
 ## Eager + lazy
-
-
 `Eager` and `lazy` have the same API.
-
-
-
-
-
  
-
 ```python
-
 out = df.melt(id_vars=["A", "B"], value_vars=["C", "D"])
 print(out)
-
 ```
-
-
-
-
-
  
-
-
-
-
-
-
-
-
 

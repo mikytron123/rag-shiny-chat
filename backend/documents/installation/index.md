@@ -1,116 +1,40 @@
 # Installation
-
-
 Polars is a library and installation is as simple as invoking the package manager of the corresponding programming language.
 
-
-
-
-
-
 ```python
-
 pip install polars
-
 # Or for legacy CPUs without AVX2 support
 pip install polars-lts-cpu
-
 ```
-
-
-
-
-
-
-
-
 
 ### Big Index
-
-
 By default, polars is limited to 2^32 (~4.2 billion rows). To increase this limit 2^64 (~18 quintillion) by enabling big index:
 
-
-
-
-
-
 ```python
-
 pip install polars-u64-idx
-
 ```
-
-
-
-
-
-
-
-
 
 ### Legacy CPU
-
-
-To install polars on an old CPU without [AVX](https://en.wikipedia.org/wiki/Advanced_Vector_Extensions) support:
-
-
+To install polars on an old CPU without AVX support:
  Python
-
-
-
 ```python
-
 pip install polars-lts-cpu
-
 ```
-
-
-
 
 ## Importing
-
-
 To use the library import it into your project
 
-
-
-
-
-
 ```python
-
 import polars as pl
-
 ```
-
-
-
-
-
-
-
-
 
 ## Feature Flags
-
-
 By using the above command you install the core of Polars onto your system. However depending on your use case you might want to install the optional dependencies as well. These are made optional to minimize the footprint. The flags are different depending on the programming language. Throughout the user guide we will mention when a functionality is used that requires an additional dependency.
-
-
 ### Python
-
-
-
 ```python
-
 # For example
 pip install 'polars[numpy,fsspec]'
-
 ```
-
-
-
 | Tag | Description |
 | --- | --- |
 | all | Install all optional dependencies (all of the following) |
@@ -123,24 +47,13 @@ pip install 'polars[numpy,fsspec]'
 | deltalake | Support for reading from Delta Lake Tables |
 | plot | Support for plotting Dataframes |
 | timezone | Timezone support, only needed if 1. you are on Python < 3.9 and/or 2. you are on Windows, otherwise no dependencies will be installed |
-
-
 ### Rust
-
-
-
 ```python
-
 # Cargo.toml
 [dependencies]
 polars = { version = "0.26.1", features = ["lazy", "temporal", "describe", "json", "parquet", "dtype-datetime"] }
-
 ```
-
 The opt-in features are:
-
-
-
 * Additional data types:
 	+ `dtype-date`
 	+ `dtype-datetime`
@@ -153,13 +66,13 @@ The opt-in features are:
 	+ `dtype-categorical`
 	+ `dtype-struct`
 * `lazy` - Lazy API
-	+ `regex` - Use regexes in [column selection](crate::lazy::dsl::col)
+	+ `regex` - Use regexes in column selection
 	+ `dot_diagram` - Create dot diagrams from lazy logical plans.
 * `sql` - Pass SQL queries to polars.
 * `streaming` - Be able to process datasets that are larger than RAM.
 * `random` - Generate arrays with randomly sampled values
 * `ndarray`- Convert from `DataFrame` to `ndarray`
-* `temporal` - Conversions between [Chrono](https://docs.rs/chrono/) and Polars for temporal data types
+* `temporal` - Conversions between Chrono and Polars for temporal data types
 * `timezones` - Activate timezone support.
 * `strings` - Extra string utilities for `StringChunked`
 	+ `string_pad` - `pad_start`, `pad_end`, `zfill`
@@ -175,8 +88,6 @@ The opt-in features are:
 	are less cache efficient.
 	+ `cse` - Activate common subplan elimination optimization
 * IO related:
-
-
 	+ `serde` - Support for [serde](https://crates.io/crates/serde) serialization and deserialization.
 	Can be used for JSON and more serde supported serialization formats.
 	+ `serde-lazy` - Support for [serde](https://crates.io/crates/serde) serialization and deserialization.
@@ -189,8 +100,6 @@ The opt-in features are:
 	+ zip
 	+ gzip
 * `DataFrame` operations:
-
-
 	+ `dynamic_group_by` - Group by based on a time window instead of predefined keys.
 	Also activates rolling window group by operations.
 	+ `sort_multiple` - Allow sorting a `DataFrame` on multiple columns
