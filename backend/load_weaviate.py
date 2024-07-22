@@ -62,7 +62,7 @@ def load_db():
                 vectorize_property_name=False,
             )
         )
-        
+
     if not client.collections.exists(collection_name):
         client.collections.create(
             name=collection_name,
