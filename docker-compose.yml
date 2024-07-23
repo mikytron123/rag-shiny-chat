@@ -48,6 +48,8 @@ services:
     - --scheme
     - http
     image: cr.weaviate.io/semitechnologies/weaviate:1.25.4
+    depends_on:
+      - text-embeddings-inference
     ports:
     - "8090:8090"
     - "50051:50051"

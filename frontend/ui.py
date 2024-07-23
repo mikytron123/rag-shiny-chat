@@ -33,9 +33,11 @@ app_ui = ui.page_fluid(
 
 
 def server(input: Inputs, output: Outputs, session: Session) -> None:
-    chunks = reactive.value(tuple())
-    links = reactive.value(set())
-    streaming_chat_messages_batch = reactive.value(tuple())
+    chunks: reactive.Value[tuple[str, ...]] = reactive.value(tuple())
+    links: reactive.Value[tuple[str, ...]] = reactive.value(tuple())
+    streaming_chat_messages_batch: reactive.Value[tuple[str, ...]] = reactive.value(
+        tuple()
+    )
 
     @reactive.effect()
     @reactive.event(streaming_chat_messages_batch)
@@ -47,7 +49,7 @@ def server(input: Inputs, output: Outputs, session: Session) -> None:
                 if "completion" in data_dict:
                     chunks.set(chunks() + (data_dict["completion"],))
                 elif "links" in data_dict:
-                    links.set(links().union(set(data_dict["links"])))
+                    links.set(links() + tuple(data_dict["links"],))
 
         return
 
@@ -55,7 +57,6 @@ def server(input: Inputs, output: Outputs, session: Session) -> None:
     @reactive.event(input.submit_button)
     async def api_call():
         chunks.set(("",))
-        links.set(set())
         payload = {
             "model": input.model(),
             "temperature": input.input_temp(),
@@ -68,7 +69,6 @@ def server(input: Inputs, output: Outputs, session: Session) -> None:
         r = await client.send(req, stream=True)
         messages = stream_to_reactive(r)
         chunks.set(("",))
-        links.set(set())
 
         @reactive.Effect
         def copy_messages_to_batch():

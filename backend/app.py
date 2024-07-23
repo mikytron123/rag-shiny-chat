@@ -63,15 +63,15 @@ def create_chain(data: Parameters) -> tuple[Any, WeaviateClient]:
 
 async def llm_generator(data: Parameters) -> AsyncGenerator[bytes, None]:
     llm, client = create_chain(data)
+    link_dict = {}
     async for chunk in llm.astream({"input": data.prompt}):
         if "answer" in chunk:
             yield encode_json({"completion": chunk["answer"]})
         elif "context" in chunk:
-            yield encode_json(
-                {"links": [doc.metadata["link"] for doc in chunk["context"]]}
-            )
-        else:
-            yield encode_json({})
+            link_dict = {"links": list({doc.metadata["link"] for doc in chunk["context"]})}
+            
+    yield encode_json(link_dict)
+    
     client.close()
 
 
