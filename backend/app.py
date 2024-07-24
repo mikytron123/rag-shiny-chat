@@ -68,10 +68,12 @@ async def llm_generator(data: Parameters) -> AsyncGenerator[bytes, None]:
         if "answer" in chunk:
             yield encode_json({"completion": chunk["answer"]})
         elif "context" in chunk:
-            link_dict = {"links": list({doc.metadata["link"] for doc in chunk["context"]})}
-            
+            link_dict = {
+                "links": list({doc.metadata["link"] for doc in chunk["context"]})
+            }
+
     yield encode_json(link_dict)
-    
+
     client.close()
 
 
