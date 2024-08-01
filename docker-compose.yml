@@ -1,11 +1,13 @@
 services:
   ollama:
-    image: ollama/ollama
+    image: ollama/ollama:0.3.1
     volumes:
       - ./ollama/ollama:/root/.ollama
       - ./ollama_entrypoint.sh:/entrypoint.sh
     entrypoint: ["/usr/bin/bash", "/entrypoint.sh"]
     env_file: ".env"
+    ports:
+      - "11434:11434"
     deploy:
       resources:
         reservations:
