@@ -1,16 +1,16 @@
 from dataclasses import dataclass
-from typing import AsyncGenerator, Any
+from typing import AsyncGenerator
 
 import requests
 from langchain_community.llms import Ollama
 from litestar import Litestar, post, get
 from litestar.response import Stream
+from litestar.datastructures import State
 from langchain.chains import create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.prompts import ChatPromptTemplate
 
 from litestar.serialization import encode_json
-from weaviate import WeaviateClient
 
 from constants import system_prompt, collection_name
 from load_weaviate import load_db
@@ -18,11 +18,20 @@ from langchain_weaviate.vectorstores import WeaviateVectorStore
 import os
 import weaviate
 from teiembedding import TextEmbeddingsInference
-import traceback
 
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", default="localhost")
 WEAVIATE_HOST = os.getenv("WEAVIATE_HOST", default="localhost")
 TEI_HOST = os.getenv("TEI_HOST", default="localhost")
+
+
+@dataclass
+class ModelSchema:
+    models: list[str]
+
+
+@dataclass
+class LlmCompletionSchema:
+    completion: str
 
 
 @dataclass
@@ -32,8 +41,17 @@ class Parameters:
     prompt: str
 
 
-def create_chain(data: Parameters) -> tuple[Any, WeaviateClient]:
-    client = weaviate.connect_to_local(host=WEAVIATE_HOST, port=8090)
+def on_startup(app: Litestar):
+    app.state.client = weaviate.connect_to_local(host=WEAVIATE_HOST, port=8090)
+
+
+def on_shutdown(app: Litestar):
+    client = app.state.client
+    client.close()
+
+
+def create_chain(state: State, data: Parameters):
+    client = state.client
     tei_url = f"http://{TEI_HOST}:8080"
     embeddings = TextEmbeddingsInference(url=tei_url, normalize=True)
     db = WeaviateVectorStore(
@@ -58,11 +76,11 @@ def create_chain(data: Parameters) -> tuple[Any, WeaviateClient]:
     )
     question_answer_chain = create_stuff_documents_chain(llm, prompt)
     chain = create_retrieval_chain(retriever, question_answer_chain)
-    return chain, client
+    return chain
 
 
-async def llm_generator(data: Parameters) -> AsyncGenerator[bytes, None]:
-    llm, client = create_chain(data)
+async def llm_generator(state: State, data: Parameters) -> AsyncGenerator[bytes, None]:
+    llm = create_chain(state, data)
     link_dict = {}
     async for chunk in llm.astream({"input": data.prompt}):
         if "answer" in chunk:
@@ -71,36 +89,31 @@ async def llm_generator(data: Parameters) -> AsyncGenerator[bytes, None]:
             link_dict = {
                 "links": list({doc.metadata["link"] for doc in chunk["context"]})
             }
-
     yield encode_json(link_dict)
-
-    client.close()
 
 
 @post("/llm/stream")
-async def post_llm_stream(data: Parameters) -> Stream:
-    return Stream(llm_generator(data))
+async def post_llm_stream(state: State, data: Parameters) -> Stream:
+    return Stream(llm_generator(state, data))
 
 
 @get("models")
-async def get_models() -> dict[str, str]:
+async def get_models() -> ModelSchema:
     models_req = requests.get(f"http://{OLLAMA_HOST}:11434/api/tags").json()
-    choices_dict = {dd["name"]: dd["name"] for dd in models_req["models"]}
-    return choices_dict
+    choices = [dd["name"] for dd in models_req["models"]]
+    return ModelSchema(models=choices)
 
 
-@post("/llm")
-async def post_llm(data: Parameters) -> dict[str, str]:
-    try:
-        chain, client = create_chain(data)
-        ans = chain.invoke({"input": data.prompt})
-        client.close()
-        return {"completion": ans["answer"]}
-    except Exception as e:
-        print(e)
-        print(traceback.format_exc())
-        return {}
+@post("/llm/invoke")
+async def post_llm(state: State, data: Parameters) -> LlmCompletionSchema:
+    chain = create_chain(state, data)
+    ans = chain.invoke({"input": data.prompt})
+    return LlmCompletionSchema(completion=ans["answer"])
 
 
 load_db()
-app = Litestar([get_models, post_llm, post_llm_stream])
+app = Litestar(
+    [get_models, post_llm, post_llm_stream],
+    on_startup=[on_startup],
+    on_shutdown=[on_shutdown],
+)
