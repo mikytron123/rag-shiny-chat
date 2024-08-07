@@ -37,7 +37,7 @@
 
 <!-- ABOUT THE PROJECT -->
 ## About The Project
-[screen-capture (1).webm](https://github.com/mikytron123/rag-shiny-chat/assets/25290130/47d2bef1-d117-4130-b257-4a3809436dba)
+[screen-capture_new.webm](https://github.com/user-attachments/assets/30f8fb30-f7b1-44fd-b4fe-3ebff2ba20ea)
 
 This is a RAG application for answering questions about the [Polars](https://pola.rs/) Python library. This project uses the Weaviate vector database for storing document embeddings, Ollama for interacting with local LLMs, Litestar for the backend API, Shiny for the frontend ui. 
 
