@@ -2,16 +2,23 @@ from shiny import App, ui, Inputs, Outputs, Session
 import httpx
 import os
 import json
+from shared.api_models import ModelSchema
+import msgspec
 
 SERVER_HOST = os.getenv("SERVER_HOST", default="localhost")
 
-choices_dict = httpx.get(f"http://{SERVER_HOST}:8000/models").json()
+client = httpx.AsyncClient(timeout=120)
+
+decoder = msgspec.json.Decoder(type=ModelSchema)
+
+r = httpx.get(f"http://{SERVER_HOST}:8000/models")
+choices = decoder.decode(r.content).models
 
 app_ui = ui.page_fluid(
     ui.panel_title("LLM RAG chat bot"),
     ui.layout_sidebar(
         ui.sidebar(
-            ui.input_select(id="model", label="Ollama models", choices=choices_dict),
+            ui.input_select(id="model", label="Ollama models", choices=choices),
             ui.input_slider(
                 id="input_temp",
                 label="Temperature",
@@ -29,7 +36,7 @@ app_ui = ui.page_fluid(
 
 
 def server(input: Inputs, output: Outputs, session: Session) -> None:
-    chat = ui.Chat(id="chat")
+    chat = ui.Chat(id="chat", tokenizer=None)
     chat.ui()
 
     async def respone_to_iterator(r: httpx.Response):
@@ -47,22 +54,18 @@ def server(input: Inputs, output: Outputs, session: Session) -> None:
     @chat.on_user_submit
     async def _():
         query = chat.user_input()
-
         payload = {
             "model": input.model(),
             "temperature": input.input_temp(),
             "prompt": query,
         }
-        client = httpx.AsyncClient(timeout=120)
+
         req = client.build_request(
             "POST", f"http://{SERVER_HOST}:8000/llm/stream", json=payload
         )
         r = await client.send(req, stream=True)
         response_iter = respone_to_iterator(r)
-
         await chat.append_message_stream(response_iter)
-        await r.aclose()
-        await client.aclose()
 
 
 app = App(app_ui, server)

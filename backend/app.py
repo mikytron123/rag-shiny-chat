@@ -9,7 +9,7 @@ from litestar.datastructures import State
 from langchain.chains import create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.prompts import ChatPromptTemplate
-
+from shared.api_models import LlmCompletionSchema, ModelSchema
 from litestar.serialization import encode_json
 
 from constants import system_prompt, collection_name
@@ -22,16 +22,6 @@ from teiembedding import TextEmbeddingsInference
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", default="localhost")
 WEAVIATE_HOST = os.getenv("WEAVIATE_HOST", default="localhost")
 TEI_HOST = os.getenv("TEI_HOST", default="localhost")
-
-
-@dataclass
-class ModelSchema:
-    models: list[str]
-
-
-@dataclass
-class LlmCompletionSchema:
-    completion: str
 
 
 @dataclass

@@ -3,7 +3,7 @@ from typing import List
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel
-import requests
+import httpx
 
 
 def batched(iterable, n):
@@ -36,7 +36,7 @@ class TextEmbeddingsInference(BaseModel, Embeddings):
                 "normalize": self.normalize,
                 "truncate": True,
             }
-            response = requests.post(f"{self.url}/embed", json=payload).json()
+            response = httpx.post(f"{self.url}/embed", json=payload).json()
             embeddings.extend(response)
 
         return embeddings
