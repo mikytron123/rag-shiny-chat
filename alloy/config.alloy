@@ -1,0 +1,35 @@
+otelcol.receiver.otlp "default" {
+  http {}
+
+  output {
+    metrics   = [otelcol.processor.batch.default.input]
+    traces    = [otelcol.processor.batch.default.input]
+  }
+}
+
+otelcol.processor.batch "default" {
+  output {
+    metrics  = [otelcol.exporter.debug.default.input,otelcol.exporter.prometheus.default.input]
+    traces  = [otelcol.exporter.debug.default.input,otelcol.exporter.otlphttp.default.input]
+  }
+}
+
+otelcol.exporter.prometheus "default" {
+  forward_to = [prometheus.remote_write.prom.receiver]
+}
+
+prometheus.remote_write "prom" {
+  endpoint {
+    url = "http://prometheus:9090/api/v1/write"
+  }
+}
+
+otelcol.exporter.otlphttp "default" {
+  client {
+    endpoint = "http://jaeger:4318"
+  }
+}
+
+otelcol.exporter.debug "default" {
+  verbosity = "detailed"
+}

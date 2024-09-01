@@ -6,8 +6,8 @@ services:
       - ./ollama_entrypoint.sh:/entrypoint.sh
     entrypoint: ["/usr/bin/bash", "/entrypoint.sh"]
     env_file: ".env"
-    ports:
-      - "11434:11434"
+    # ports:
+    #   - "11434:11434"
     deploy:
       resources:
         reservations:
@@ -57,7 +57,7 @@ services:
     - "50051:50051"
     volumes:
     - weaviate_data:/var/lib/weaviate
-    restart: on-failure:0
+    #    restart: on-failure:0
     environment:
       QUERY_DEFAULTS_LIMIT: 25
       AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: 'true'
@@ -83,13 +83,52 @@ services:
               count: all
               capabilities:
                   - gpu
+  
+  jaeger:
+    # env_file:
+    #   - .env
+    # container_name: jaeger
+    ports:
+        - 6831:6831/udp
+        - 5778:5778
+        - 16686:16686
+        - 4318:4318
+        - 4317:4317
+        - 14269:14269
+    image: jaegertracing/all-in-one:latest
+  
+  prometheus:
+    # env_file:
+    #   - .env
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./Prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    image: prom/prometheus:latest
+    command:
+    - --config.file=/etc/prometheus/prometheus.yml
+    - --web.enable-remote-write-receiver 
+  
+  grafana:
+    ports:
+      - "3000:3000"
+    image: grafana/grafana-oss
+
+  alloy:
+    image: grafana/alloy:latest
+    volumes:
+      - ./alloy/config.alloy:/etc/alloy/config.alloy
+    ports:
+      - "12345:12345"
+    command: 
+    - run
+    - --server.http.listen-addr=0.0.0.0:12345
+    - --storage.path=/var/lib/alloy/data
+    - --stability.level=experimental
+    - /etc/alloy/config.alloy  
+
+
 volumes:
   weaviate_data:
-
-
-
-
-
-
 
 

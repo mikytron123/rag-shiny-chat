@@ -1,0 +1,17 @@
+litestar[standard,opentelemetry]
+langchain
+langchain-community
+langchain-weaviate
+weaviate-client
+llama-index-core
+llama-index-readers-file
+opentelemetry-instrumentation-httpx
+opentelemetry-sdk
+opentelemetry-api
+opentelemetry-distro
+opentelemetry-exporter-otlp-proto-http
+httpx
+ollama
+pandas
+msgspec
+

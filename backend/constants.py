@@ -9,3 +9,6 @@ system_prompt = """You are an AI assistant for answering questions about the Pol
     Answer in Markdown"""
 
 collection_name = "document_collection"
+
+alpha = 0.5
+k = 4
