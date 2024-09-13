@@ -13,3 +13,18 @@ scrape_configs:
   static_configs:
   - targets:
     - prometheus:9090
+
+- job_name: weaviate
+  honor_timestamps: true
+  track_timestamps_staleness: false
+  scrape_interval: 10s
+  scrape_timeout: 10s
+  metrics_path: /metrics
+  scheme: http
+  enable_compression: true
+  follow_redirects: true
+  enable_http2: true
+  http_headers: null
+  static_configs:
+  - targets:
+    - weaviate:2112
