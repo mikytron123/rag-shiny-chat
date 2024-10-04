@@ -43,13 +43,7 @@ services:
         - server
 
   weaviate:
-    command:
-    - --host
-    - 0.0.0.0
-    - --port
-    - '8090'
-    - --scheme
-    - http
+    entrypoint: ["sh", "/entrypoint.sh"]
     image: cr.weaviate.io/semitechnologies/weaviate:1.25.4
     depends_on:
       - text-embeddings-inference
@@ -57,6 +51,7 @@ services:
     - "8090:8090"
     - "50051:50051"
     volumes:
+    - ./weaviate/entrypoint.sh:/entrypoint.sh
     - weaviate_data:/var/lib/weaviate
     #    restart: on-failure:0
     environment:

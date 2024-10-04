@@ -1,7 +1,6 @@
 from llama_index.core import SimpleDirectoryReader
 from llama_index.core.node_parser import MarkdownNodeParser
 import weaviate
-from weaviate.classes.config import Configure, VectorDistances, DataType, Property
 from constants import collection_name
 from teiembedding import TextEmbeddingsInference
 import os
@@ -15,8 +14,13 @@ def load_db():
     client = weaviate.connect_to_local(host=WEAVIATE_HOST, port=8090)
 
     if client.collections.exists(collection_name):
-        client.close()
-        return
+        collection = client.collections.get(collection_name)
+        count = 0
+        for _ in collection.iterator():
+            count += 1
+        if count > 0:
+            client.close()
+            return
 
     documents = SimpleDirectoryReader("documents", recursive=True).load_data()
 
@@ -38,40 +42,6 @@ def load_db():
         meta = meta | {"link": link}
 
         metadata_lst.append(meta)
-
-    properties = []
-    for k, v in metadata_lst[0].items():
-        name = k
-        if "date" in k:
-            data_type = DataType.DATE
-        elif isinstance(v, str):
-            data_type = DataType.TEXT
-        elif isinstance(v, int):
-            data_type = DataType.INT
-        else:
-            data_type = DataType.TEXT
-        if k == "text":
-            skip_vec = False
-        else:
-            skip_vec = True
-        properties.append(
-            Property(
-                name=name,
-                data_type=data_type,
-                skip_vectorization=skip_vec,
-                vectorize_property_name=False,
-            )
-        )
-
-    if not client.collections.exists(collection_name):
-        client.collections.create(
-            name=collection_name,
-            properties=properties,
-            vectorizer_config=Configure.Vectorizer.none(),
-            vector_index_config=Configure.VectorIndex.hnsw(
-                distance_metric=VectorDistances.COSINE
-            ),
-        )
 
     documents = client.collections.get(collection_name)
 
