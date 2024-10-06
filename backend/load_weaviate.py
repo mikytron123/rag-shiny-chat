@@ -7,11 +7,12 @@ import os
 import pandas as pd
 
 WEAVIATE_HOST = os.getenv("WEAVIATE_HOST", default="localhost")
+WEAVIATE_PORT = os.getenv("WEAVIATE_PORT")
 TEI_HOST = os.getenv("TEI_HOST", default="localhost")
-
+TEI_PORT = os.getenv("TEI_PORT")
 
 def load_db():
-    client = weaviate.connect_to_local(host=WEAVIATE_HOST, port=8090)
+    client = weaviate.connect_to_local(host=WEAVIATE_HOST, port=int(WEAVIATE_PORT))
 
     if client.collections.exists(collection_name):
         collection = client.collections.get(collection_name)
@@ -45,7 +46,7 @@ def load_db():
 
     documents = client.collections.get(collection_name)
 
-    tei_url = f"http://{TEI_HOST}:8080"
+    tei_url = f"http://{TEI_HOST}:{TEI_PORT}"
     embedding_model = TextEmbeddingsInference(url=tei_url, normalize=True)
     embeddings = embedding_model.embed_documents(texts)
 

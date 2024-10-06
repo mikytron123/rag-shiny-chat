@@ -34,9 +34,11 @@ from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
 
 
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", default="localhost")
+OLLAMA_PORT = os.getenv("OLLAMA_PORT")
 WEAVIATE_HOST = os.getenv("WEAVIATE_HOST", default="localhost")
+WEAVIATE_PORT = os.getenv("WEAVIATE_PORT")
 TEI_HOST = os.getenv("TEI_HOST", default="localhost")
-
+TEI_PORT = os.getenv("TEI_PORT")
 
 resource = Resource(attributes={SERVICE_NAME: "ragproject"})
 
@@ -61,11 +63,6 @@ HTTPXClientInstrumentor(tracer_provider=traceProvider).instrument()
 
 application_name = "ragproject"
 otlp_endpoint = "http://alloy:4318"
-# metrics_dist:dict = setup_meter(application_name=application_name,
-#                            environment="default",
-#                            meter=meter,
-#                            otlp_endpoint="http://alloy:4318",
-#                            otlp_headers=None)
 metrics_dist = {
     "genai_requests": meter.create_counter(
         name="genai.total.requests",
@@ -103,8 +100,9 @@ class Parameters:
 
 
 def on_startup(app: Litestar):
-    app.state.db_client = weaviate.connect_to_local(host=WEAVIATE_HOST, port=8090)
-    app.state.ollama_client = ollama.Client(host=f"http://{OLLAMA_HOST}:11434")
+    app.state.db_client = weaviate.connect_to_local(host=WEAVIATE_HOST, port=int(WEAVIATE_PORT))
+    app.state.ollama_client = ollama.Client(host=f"http://{OLLAMA_HOST}:{OLLAMA_PORT}")
+
 
 def on_shutdown(app: Litestar):
     client = app.state.client
@@ -113,7 +111,7 @@ def on_shutdown(app: Litestar):
 
 def create_chain(state: State, data: Parameters):
     client = state.db_client
-    tei_url = f"http://{TEI_HOST}:8080"
+    tei_url = f"http://{TEI_HOST}:{TEI_PORT}"
     embeddings = TextEmbeddingsInference(url=tei_url, normalize=True)
     db = WeaviateVectorStore(
         client=client, index_name=collection_name, text_key="text", embedding=embeddings
@@ -123,7 +121,7 @@ def create_chain(state: State, data: Parameters):
         search_kwargs=dict(alpha=alpha, k=k, vector=query_embedding)
     )
     llm = Ollama(
-        base_url=f"http://{OLLAMA_HOST}:11434",
+        base_url=f"http://{OLLAMA_HOST}:{OLLAMA_PORT}",
         model=data.model,
         temperature=data.temperature,
     )
@@ -147,7 +145,7 @@ async def llm_generator(state: State, data: Parameters) -> AsyncGenerator[bytes,
     )
     metrics_dist["db_requests"].add(1)
 
-    num_input_tokens = get_num_tokens(data.prompt)
+    num_input_tokens = get_num_tokens(state.ollama_client, data.model, data.prompt)
     metrics_dist["genai_prompt_tokens"].add(num_input_tokens)
 
     num_output_tokens = 0
@@ -172,7 +170,7 @@ async def post_llm_stream(state: State, data: Parameters) -> Stream:
 
 
 @get("models")
-async def get_models(state:State) -> ModelSchema:
+async def get_models(state: State) -> ModelSchema:
     client = state.ollama_client
     models_req = client.list()
     choices = [dd["name"] for dd in models_req["models"]]
@@ -183,7 +181,7 @@ async def get_models(state:State) -> ModelSchema:
 @post("/llm/invoke")
 async def post_llm(state: State, data: Parameters) -> LlmCompletionSchema:
     try:
-        num_input_tokens = get_num_tokens(state.ollama_client,data.model, data.prompt)
+        num_input_tokens = get_num_tokens(state.ollama_client, data.model, data.prompt)
         chain, llm = create_chain(state, data)
         with tracer.start_as_current_span(name="langchain") as span:
             span.set_attribute("genai.request.model", llm.model)
@@ -197,7 +195,9 @@ async def post_llm(state: State, data: Parameters) -> LlmCompletionSchema:
             span.set_attribute("gen_ai.usage.input_tokens", num_input_tokens)
             ans = chain.invoke({"input": data.prompt})
 
-            num_output_tokens = get_num_tokens(state.ollama_client,data.model, ans["answer"])
+            num_output_tokens = get_num_tokens(
+                state.ollama_client, data.model, ans["answer"]
+            )
 
             span.set_attribute("gen_ai.usage.output_tokens", num_output_tokens)
             span.set_attribute(

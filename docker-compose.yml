@@ -1,6 +1,6 @@
 services:
   ollama:
-    image: ollama/ollama:0.3.1
+    image: ollama/ollama:latest
     volumes:
       - ./ollama/ollama:/root/.ollama
       - ./ollama_entrypoint.sh:/entrypoint.sh
@@ -19,7 +19,7 @@ services:
     build:
       context: backend
     ports:
-      - "8000:8000"
+      - "${SERVER_PORT}:${SERVER_PORT}"
     env_file: ".env"
     depends_on:
         - ollama
@@ -48,8 +48,10 @@ services:
     depends_on:
       - text-embeddings-inference
     ports:
-    - "8090:8090"
+    - "${WEAVIATE_PORT}:${WEAVIATE_PORT}"
     - "50051:50051"
+    env_file:
+      - .env
     volumes:
     - ./weaviate/entrypoint.sh:/entrypoint.sh
     - weaviate_data:/var/lib/weaviate
@@ -65,13 +67,13 @@ services:
 
   text-embeddings-inference:
     ports:
-      - 8080:8080
+      - ${TEI_PORT}:${TEI_PORT}
     volumes:
         - ./data:/data
     image: ghcr.io/huggingface/text-embeddings-inference:turing-1.5
     env_file:
       - .env
-    command: --model-id $MODEL --pooling mean --port 8080
+    command: --model-id $MODEL --pooling mean --port ${TEI_PORT}
     deploy:
       resources:
         reservations:

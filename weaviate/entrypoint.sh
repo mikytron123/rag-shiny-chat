@@ -1,4 +1,4 @@
-/bin/weaviate --host 0.0.0.0 --port 8090 --scheme http &
+/bin/weaviate --host 0.0.0.0 --port $WEAVIATE_PORT --scheme http &
 
 pid=$!
 
@@ -83,7 +83,7 @@ wget --header 'content-type: application/json' --post-data '{
     },
     "vectorIndexType": "hnsw",
     "vectorizer": "none"
-}' http://localhost:8090/v1/schema
+}' http://localhost:${WEAVIATE_PORT}/v1/schema
 echo 'done'
 
 wait $pid

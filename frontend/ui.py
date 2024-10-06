@@ -6,12 +6,12 @@ from shared.api_models import ModelSchema
 import msgspec
 
 SERVER_HOST = os.getenv("SERVER_HOST", default="localhost")
-
+SERVER_PORT = os.getenv("SERVER_PORT")
 client = httpx.AsyncClient(timeout=120)
 
 decoder = msgspec.json.Decoder(type=ModelSchema)
 
-r = httpx.get(f"http://{SERVER_HOST}:8000/models")
+r = httpx.get(f"http://{SERVER_HOST}:{SERVER_PORT}/models")
 choices = decoder.decode(r.content).models
 
 app_ui = ui.page_fluid(
@@ -61,7 +61,7 @@ def server(input: Inputs, output: Outputs, session: Session) -> None:
         }
 
         req = client.build_request(
-            "POST", f"http://{SERVER_HOST}:8000/llm/stream", json=payload
+            "POST", f"http://{SERVER_HOST}:{SERVER_PORT}/llm/stream", json=payload
         )
         r = await client.send(req, stream=True)
         response_iter = respone_to_iterator(r)
