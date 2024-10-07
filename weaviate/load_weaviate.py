@@ -1,7 +1,6 @@
 from llama_index.core import SimpleDirectoryReader
 from llama_index.core.node_parser import MarkdownNodeParser
 import weaviate
-from constants import collection_name
 from teiembedding import TextEmbeddingsInference
 import os
 import pandas as pd
@@ -11,7 +10,9 @@ WEAVIATE_PORT = os.getenv("WEAVIATE_PORT")
 TEI_HOST = os.getenv("TEI_HOST", default="localhost")
 TEI_PORT = os.getenv("TEI_PORT")
 
+
 def load_db():
+    collection_name = "document_collection"
     client = weaviate.connect_to_local(host=WEAVIATE_HOST, port=int(WEAVIATE_PORT))
 
     if client.collections.exists(collection_name):
@@ -69,3 +70,7 @@ def load_db():
         print(f"Failed to import {len(documents.batch.failed_objects)} objects")
 
     client.close()
+
+
+if __name__ == "__main__":
+    load_db()

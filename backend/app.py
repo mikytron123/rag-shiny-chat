@@ -14,7 +14,6 @@ from shared.api_models import LlmCompletionSchema, ModelSchema
 from litestar.serialization import encode_json
 from litestar.contrib.opentelemetry import OpenTelemetryConfig, OpenTelemetryPlugin
 from constants import system_prompt, collection_name, alpha, k
-from load_weaviate import load_db
 from langchain_weaviate.vectorstores import WeaviateVectorStore
 import os
 import ollama
@@ -100,7 +99,9 @@ class Parameters:
 
 
 def on_startup(app: Litestar):
-    app.state.db_client = weaviate.connect_to_local(host=WEAVIATE_HOST, port=int(WEAVIATE_PORT))
+    app.state.db_client = weaviate.connect_to_local(
+        host=WEAVIATE_HOST, port=int(WEAVIATE_PORT)
+    )
     app.state.ollama_client = ollama.Client(host=f"http://{OLLAMA_HOST}:{OLLAMA_PORT}")
 
 
@@ -228,7 +229,6 @@ async def post_llm(state: State, data: Parameters) -> LlmCompletionSchema:
         return LlmCompletionSchema(completion="")
 
 
-load_db()
 open_telemetry_config = OpenTelemetryConfig(
     tracer_provider=traceProvider, meter_provider=meterProvider
 )

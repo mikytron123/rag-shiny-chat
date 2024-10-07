@@ -1,0 +1,7 @@
+weaviate-client
+llama-index-core
+llama-index-readers-file
+httpx
+pandas
+pydantic
+
