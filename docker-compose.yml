@@ -17,21 +17,28 @@ services:
               capabilities: [gpu]
   server:
     build:
-      context: backend
+      context: ./backend
     ports:
       - "${SERVER_PORT}:${SERVER_PORT}"
     env_file: ".env"
     depends_on:
-        - ollama
-        - weaviate
-        - alloy
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
+      weaviate-loader:
+        condition: service_completed_successfully
+      ollama:
+        condition: service_started
+      weaviate:
+        condition: service_started
+      alloy:
+        condition: service_started
+
+
+  weaviate-loader:
+    depends_on:
+      - weaviate
+    build: 
+      context: ./weaviate
+    env_file:
+      - .env
 
   ui:
     build:
