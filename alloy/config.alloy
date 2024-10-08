@@ -3,14 +3,14 @@ otelcol.receiver.otlp "default" {
 
   output {
     metrics   = [otelcol.processor.batch.default.input]
-    traces    = [otelcol.processor.batch.default.input]
+//    traces    = [otelcol.processor.batch.default.input]
   }
 }
 
 otelcol.processor.batch "default" {
   output {
     metrics  = [otelcol.exporter.debug.default.input,otelcol.exporter.prometheus.default.input]
-    traces  = [otelcol.exporter.debug.default.input,otelcol.exporter.otlphttp.default.input]
+//    traces  = [otelcol.exporter.debug.default.input,otelcol.exporter.otlphttp.default.input]
   }
 }
 
@@ -24,11 +24,11 @@ prometheus.remote_write "prom" {
   }
 }
 
-otelcol.exporter.otlphttp "default" {
-  client {
-    endpoint = "http://jaeger:4318"
-  }
-}
+//otelcol.exporter.otlphttp "default" {
+//  client {
+//    endpoint = "http://jaeger:4318"
+//  }
+//}
 
 otelcol.exporter.debug "default" {
   verbosity = "detailed"

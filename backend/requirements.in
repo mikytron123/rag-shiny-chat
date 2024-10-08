@@ -13,5 +13,6 @@ opentelemetry-exporter-otlp-proto-http
 httpx
 ollama
 pandas
+langfuse
 msgspec
 

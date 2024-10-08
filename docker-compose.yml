@@ -30,6 +30,8 @@ services:
         condition: service_started
       alloy:
         condition: service_started
+      langfuse:
+        condition: service_started
 
 
   weaviate-loader:
@@ -54,6 +56,7 @@ services:
     image: cr.weaviate.io/semitechnologies/weaviate:1.25.4
     depends_on:
       - text-embeddings-inference
+      - prometheus
     ports:
     - "${WEAVIATE_PORT}:${WEAVIATE_PORT}"
     - "50051:50051"
@@ -90,18 +93,18 @@ services:
               capabilities:
                   - gpu
   
-  jaeger:
-    # env_file:
-    #   - .env
-    # container_name: jaeger
-    ports:
-        - 6831:6831/udp
-        - 5778:5778
-        - 16686:16686
-        - 4318:4318
-        - 4317:4317
-        - 14269:14269
-    image: jaegertracing/all-in-one:latest
+  # jaeger:
+  #   # env_file:
+  #   #   - .env
+  #   # container_name: jaeger
+  #   ports:
+  #       - 6831:6831/udp
+  #       - 5778:5778
+  #       - 16686:16686
+  #       - 4318:4318
+  #       - 4317:4317
+  #       - 14269:14269
+  #   image: jaegertracing/all-in-one:latest
   
   prometheus:
     # env_file:
@@ -118,7 +121,7 @@ services:
   grafana:
     depends_on:
       - prometheus
-      - jaeger
+      # - jaeger
     ports:
       - "3000:3000"
     image: grafana/grafana-oss
@@ -130,14 +133,42 @@ services:
     ports:
       - "12345:12345"
     depends_on:
-      - jaeger
+      # - jaeger
       - prometheus
     command: 
     - run
     - --server.http.listen-addr=0.0.0.0:12345
     - --storage.path=/var/lib/alloy/data
     - --stability.level=experimental
-    - /etc/alloy/config.alloy  
+    - /etc/alloy/config.alloy
+  
+  postgresql:
+    image: postgres:latest
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U langfuse"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+    environment:
+      POSTGRES_USER: langfuse
+      POSTGRES_PASSWORD: langfuse
+      POSTGRES_DB: langfuse
+
+  langfuse:
+    container_name: langfuse
+    env_file:
+      - .env
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_HOST: postgresql
+      DATABASE_USERNAME: langfuse
+      DATABASE_PASSWORD: langfuse
+      DATABASE_NAME: langfuse
+    image: "langfuse/langfuse:latest"
+    depends_on:
+      postgresql:
+        condition: service_healthy
 
 
 volumes:

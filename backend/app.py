@@ -21,15 +21,11 @@ import traceback
 import weaviate
 from teiembedding import TextEmbeddingsInference
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
-from opentelemetry import trace
-from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry import metrics
 from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
-from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
+from langfuse.callback import CallbackHandler
 
 
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", default="localhost")
@@ -38,15 +34,11 @@ WEAVIATE_HOST = os.getenv("WEAVIATE_HOST", default="localhost")
 WEAVIATE_PORT = os.getenv("WEAVIATE_PORT")
 TEI_HOST = os.getenv("TEI_HOST", default="localhost")
 TEI_PORT = os.getenv("TEI_PORT")
+LANGFUSE_PORT = os.getenv("LANGFUSE_PORT")
+LANGFUSE_HOST = os.getenv("LANGFUSE_HOST")
 
 resource = Resource(attributes={SERVICE_NAME: "ragproject"})
 
-traceProvider = TracerProvider(resource=resource)
-processor = BatchSpanProcessor(OTLPSpanExporter(endpoint="http://alloy:4318/v1/traces"))
-traceProvider.add_span_processor(processor)
-trace.set_tracer_provider(traceProvider)
-
-tracer = trace.get_tracer("ragproject.backend")
 
 reader = PeriodicExportingMetricReader(
     OTLPMetricExporter(endpoint="http://alloy:4318/v1/metrics")
@@ -57,7 +49,7 @@ metrics.set_meter_provider(meterProvider)
 
 meter = metrics.get_meter("ragproject.backend")
 
-HTTPXClientInstrumentor(tracer_provider=traceProvider).instrument()
+# HTTPXClientInstrumentor(tracer_provider=traceProvider).instrument()
 
 
 application_name = "ragproject"
@@ -89,6 +81,12 @@ metrics_dist = {
         unit="1",
     ),
 }
+
+langfuse_handler = CallbackHandler(
+    public_key=os.getenv("LANGFUSE_PROJECT_PUBLIC_KEY"),
+    secret_key=os.getenv("LANGFUSE_PROJECT_SECRET_KEY"),
+    host=f"http://{LANGFUSE_HOST}:{LANGFUSE_PORT}",
+)
 
 
 @dataclass
@@ -151,7 +149,9 @@ async def llm_generator(state: State, data: Parameters) -> AsyncGenerator[bytes,
 
     num_output_tokens = 0
 
-    async for chunk in chain.astream({"input": data.prompt}):
+    async for chunk in chain.astream(
+        {"input": data.prompt}, config={"callbacks": [langfuse_handler]}
+    ):
         if "answer" in chunk:
             yield encode_json({"completion": chunk["answer"]})
             num_output_tokens += 1
@@ -184,34 +184,36 @@ async def post_llm(state: State, data: Parameters) -> LlmCompletionSchema:
     try:
         num_input_tokens = get_num_tokens(state.ollama_client, data.model, data.prompt)
         chain, llm = create_chain(state, data)
-        with tracer.start_as_current_span(name="langchain") as span:
-            span.set_attribute("genai.request.model", llm.model)
-            for attr in ["temperature", "top_p", "top_k"]:
-                val = llm._default_params["options"][attr]
-                if val is None:
-                    val = "default"
-                span.set_attribute(f"genai.request.{attr}", val)
+        # with tracer.start_as_current_span(name="langchain") as span:
+        #     span.set_attribute("genai.request.model", llm.model)
+        #     for attr in ["temperature", "top_p", "top_k"]:
+        #         val = llm._default_params["options"][attr]
+        #         if val is None:
+        #             val = "default"
+        #         span.set_attribute(f"genai.request.{attr}", val)
 
-            span.set_attribute("gen_ai.request.is_stream", False)
-            span.set_attribute("gen_ai.usage.input_tokens", num_input_tokens)
-            ans = chain.invoke({"input": data.prompt})
+        #     span.set_attribute("gen_ai.request.is_stream", False)
+        #     span.set_attribute("gen_ai.usage.input_tokens", num_input_tokens)
+        ans = chain.invoke(
+            {"input": data.prompt}, config={"callbacks": [langfuse_handler]}
+        )
 
-            num_output_tokens = get_num_tokens(
-                state.ollama_client, data.model, ans["answer"]
-            )
+        num_output_tokens = get_num_tokens(
+            state.ollama_client, data.model, ans["answer"]
+        )
 
-            span.set_attribute("gen_ai.usage.output_tokens", num_output_tokens)
-            span.set_attribute(
-                "gen_ai.usage.total_tokens", num_input_tokens + num_output_tokens
-            )
+        # span.set_attribute("gen_ai.usage.output_tokens", num_output_tokens)
+        # span.set_attribute(
+        #     "gen_ai.usage.total_tokens", num_input_tokens + num_output_tokens
+        # )
 
-            span.add_event(
-                name="genai.content.prompt", attributes={"genai.prompt": data.prompt}
-            )
-            span.add_event(
-                name="genai.content.completion",
-                attributes={"genai.completion": ans["answer"]},
-            )
+        # span.add_event(
+        #     name="genai.content.prompt", attributes={"genai.prompt": data.prompt}
+        # )
+        # span.add_event(
+        #     name="genai.content.completion",
+        #     attributes={"genai.completion": ans["answer"]},
+        # )
 
         metrics_dist["genai_requests"].add(
             1,
@@ -230,7 +232,8 @@ async def post_llm(state: State, data: Parameters) -> LlmCompletionSchema:
 
 
 open_telemetry_config = OpenTelemetryConfig(
-    tracer_provider=traceProvider, meter_provider=meterProvider
+    meter_provider=meterProvider
+    # tracer_provider=traceProvider, meter_provider=meterProvider
 )
 app = Litestar(
     [get_models, post_llm, post_llm_stream],
