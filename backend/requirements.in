@@ -15,4 +15,5 @@ ollama
 pandas
 langfuse
 msgspec
+environ-config
 

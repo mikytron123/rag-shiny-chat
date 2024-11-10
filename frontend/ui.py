@@ -4,9 +4,10 @@ import os
 import json
 from shared.api_models import ModelSchema
 import msgspec
+from appconfig import config
 
-SERVER_HOST = os.getenv("SERVER_HOST", default="localhost")
-SERVER_PORT = os.getenv("SERVER_PORT")
+SERVER_HOST = config.server_host
+SERVER_PORT = config.server_port
 client = httpx.AsyncClient(timeout=120)
 
 decoder = msgspec.json.Decoder(type=ModelSchema)
@@ -40,7 +41,7 @@ def server(input: Inputs, output: Outputs, session: Session) -> None:
     chat.ui()
 
     async def respone_to_iterator(r: httpx.Response):
-        links_list: list[str]
+        links_list: list[str] = []
         async for message in r.aiter_bytes():
             data_dict = json.loads(message.decode())
             if "completion" in data_dict:

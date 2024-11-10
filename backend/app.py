@@ -15,7 +15,6 @@ from litestar.serialization import encode_json
 from litestar.contrib.opentelemetry import OpenTelemetryConfig, OpenTelemetryPlugin
 from constants import system_prompt, collection_name, alpha, k
 from langchain_weaviate.vectorstores import WeaviateVectorStore
-import os
 import ollama
 import traceback
 import weaviate
@@ -26,16 +25,16 @@ from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExp
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
 from langfuse.callback import CallbackHandler
+from appconfig import config
 
-
-OLLAMA_HOST = os.getenv("OLLAMA_HOST", default="localhost")
-OLLAMA_PORT = os.getenv("OLLAMA_PORT")
-WEAVIATE_HOST = os.getenv("WEAVIATE_HOST", default="localhost")
-WEAVIATE_PORT = os.getenv("WEAVIATE_PORT")
-TEI_HOST = os.getenv("TEI_HOST", default="localhost")
-TEI_PORT = os.getenv("TEI_PORT")
-LANGFUSE_PORT = os.getenv("LANGFUSE_PORT")
-LANGFUSE_HOST = os.getenv("LANGFUSE_HOST")
+OLLAMA_HOST = config.ollama_host
+OLLAMA_PORT = config.ollama_port
+WEAVIATE_HOST = config.weaviate_host
+WEAVIATE_PORT = config.weaviate_port
+TEI_HOST = config.tei_host
+TEI_PORT = config.tei_port
+LANGFUSE_HOST = config.langfuse_host
+LANGFUSE_PORT = config.langfuse_port
 
 resource = Resource(attributes={SERVICE_NAME: "ragproject"})
 
@@ -83,8 +82,8 @@ metrics_dist = {
 }
 
 langfuse_handler = CallbackHandler(
-    public_key=os.getenv("LANGFUSE_PROJECT_PUBLIC_KEY"),
-    secret_key=os.getenv("LANGFUSE_PROJECT_SECRET_KEY"),
+    public_key=config.langfuse_project_public_key,
+    secret_key=config.langfuse_project_secret_key,
     host=f"http://{LANGFUSE_HOST}:{LANGFUSE_PORT}",
 )
 
@@ -98,7 +97,7 @@ class Parameters:
 
 def on_startup(app: Litestar):
     app.state.db_client = weaviate.connect_to_local(
-        host=WEAVIATE_HOST, port=int(WEAVIATE_PORT)
+        host=WEAVIATE_HOST, port=(WEAVIATE_PORT)
     )
     app.state.ollama_client = ollama.Client(host=f"http://{OLLAMA_HOST}:{OLLAMA_PORT}")
 

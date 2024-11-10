@@ -1,14 +1,16 @@
 from llama_index.core import SimpleDirectoryReader
+from llama_index.core.schema import MetadataMode
 from llama_index.core.node_parser import MarkdownNodeParser
 import weaviate
 from teiembedding import TextEmbeddingsInference
-import os
-import pandas as pd
 
-WEAVIATE_HOST = os.getenv("WEAVIATE_HOST", default="localhost")
-WEAVIATE_PORT = os.getenv("WEAVIATE_PORT")
-TEI_HOST = os.getenv("TEI_HOST", default="localhost")
-TEI_PORT = os.getenv("TEI_PORT")
+import pandas as pd
+from appconfig import config
+
+WEAVIATE_HOST = config.weaviate_host
+WEAVIATE_PORT = config.weaviate_port
+TEI_HOST = config.tei_host
+TEI_PORT = config.tei_port
 
 
 def load_db():
@@ -30,14 +32,15 @@ def load_db():
 
     nodes = splitter.get_nodes_from_documents(documents, show_progress=True)
 
-    texts = [node.get_text() for node in nodes]
+    texts = [node.get_content(metadata_mode=MetadataMode.NONE) for node in nodes]
 
     metadata_lst = []
     word = "documents"
     url = "https://docs.pola.rs/user-guide"
 
     for node in nodes:
-        meta = node.metadata | {"text": node.get_text()}
+        node.get_content()
+        meta = node.metadata | {"text": node.get_content(metadata_mode=MetadataMode.NONE)}
         file_path = node.metadata["file_path"]
         start_idx = file_path.find(word) + len(word)
         link = url + file_path[start_idx:-8]
@@ -64,7 +67,8 @@ def load_db():
             # Add object to batch queue
             batch.add_object(properties=doc, vector=embeddings[idx])
             # Batcher automatically sends batches
-
+    
+    documents.batch.results
     # Check for failed objects
     if len(documents.batch.failed_objects) > 0:
         print(f"Failed to import {len(documents.batch.failed_objects)} objects")
