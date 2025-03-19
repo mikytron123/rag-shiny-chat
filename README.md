@@ -41,6 +41,9 @@
 
 This is a RAG application for answering questions about the [Polars](https://pola.rs/) Python library. This project uses the Weaviate vector database for storing document embeddings, Ollama for interacting with local LLMs, Litestar for the backend API, Shiny for the frontend ui. 
 
+![rag_architecture](https://github.com/user-attachments/assets/d872bdf1-ec48-4952-befe-96450c5a88cc)
+
+
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
