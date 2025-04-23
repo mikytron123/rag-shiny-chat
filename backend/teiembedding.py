@@ -2,12 +2,11 @@ from itertools import islice
 from typing import List
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel
 import httpx
 
 
 def batched(iterable, n):
-    # batched('ABCDEFG', 3) → ABC DEF G
     if n < 1:
         raise ValueError("n must be at least one")
     iterator = iter(iterable)

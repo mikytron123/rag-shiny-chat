@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from pydantic import BaseModel,Field
 from typing import AsyncGenerator
 from langchain_ollama import OllamaLLM
 from litestar import Litestar, post, get
@@ -86,10 +86,9 @@ langfuse_handler = CallbackHandler(
 )
 
 
-@dataclass
-class Parameters:
+class Parameters(BaseModel):
     model: str
-    temperature: float
+    temperature: float = Field(...,ge=0)
     prompt: str
 
 
@@ -181,16 +180,6 @@ async def post_llm(state: State, data: Parameters) -> LlmCompletionSchema:
     try:
         num_input_tokens = get_num_tokens(state.ollama_client, data.model, data.prompt)
         chain, llm = create_chain(state, data)
-        # with tracer.start_as_current_span(name="langchain") as span:
-        #     span.set_attribute("genai.request.model", llm.model)
-        #     for attr in ["temperature", "top_p", "top_k"]:
-        #         val = llm._default_params["options"][attr]
-        #         if val is None:
-        #             val = "default"
-        #         span.set_attribute(f"genai.request.{attr}", val)
-
-        #     span.set_attribute("gen_ai.request.is_stream", False)
-        #     span.set_attribute("gen_ai.usage.input_tokens", num_input_tokens)
         ans = chain.invoke(
             {"input": data.prompt}, config={"callbacks": [langfuse_handler]}
         )
@@ -198,19 +187,6 @@ async def post_llm(state: State, data: Parameters) -> LlmCompletionSchema:
         num_output_tokens = get_num_tokens(
             state.ollama_client, data.model, ans["answer"]
         )
-
-        # span.set_attribute("gen_ai.usage.output_tokens", num_output_tokens)
-        # span.set_attribute(
-        #     "gen_ai.usage.total_tokens", num_input_tokens + num_output_tokens
-        # )
-
-        # span.add_event(
-        #     name="genai.content.prompt", attributes={"genai.prompt": data.prompt}
-        # )
-        # span.add_event(
-        #     name="genai.content.completion",
-        #     attributes={"genai.completion": ans["answer"]},
-        # )
 
         metrics_dist["genai_requests"].add(
             1,
@@ -225,7 +201,7 @@ async def post_llm(state: State, data: Parameters) -> LlmCompletionSchema:
     except Exception as e:
         print(e)
         print(traceback.format_exc())
-        return LlmCompletionSchema(completion="")
+        return LlmCompletionSchema(completion=str(e))
 
 
 open_telemetry_config = OpenTelemetryConfig(
