@@ -1,6 +1,6 @@
 litestar[standard,opentelemetry]
 langchain
-langchain-community
+langchain-ollama
 langchain-weaviate
 weaviate-client
 llama-index-core

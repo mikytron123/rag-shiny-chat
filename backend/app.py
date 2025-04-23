@@ -1,12 +1,10 @@
 from dataclasses import dataclass
 from typing import AsyncGenerator
-
-
-from langchain_community.llms import Ollama
+from langchain_ollama import OllamaLLM
 from litestar import Litestar, post, get
 from litestar.response import Stream
 from litestar.datastructures import State
-from langchain.chains import create_retrieval_chain
+from langchain.chains.retrieval import create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.prompts import ChatPromptTemplate
 from utils import get_num_tokens
@@ -118,7 +116,7 @@ def create_chain(state: State, data: Parameters):
     retriever = db.as_retriever(
         search_kwargs=dict(alpha=alpha, k=k, vector=query_embedding)
     )
-    llm = Ollama(
+    llm = OllamaLLM(
         base_url=f"http://{OLLAMA_HOST}:{OLLAMA_PORT}",
         model=data.model,
         temperature=data.temperature,
