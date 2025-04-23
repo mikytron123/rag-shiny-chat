@@ -1,5 +1,3 @@
-ollama/*
-qdrant_data/*
 */__pycache__/
 .env
 data/*
