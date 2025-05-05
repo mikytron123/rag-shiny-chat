@@ -16,4 +16,5 @@ pandas
 langfuse
 msgspec
 environ-config
+redis
 
