@@ -1,3 +1,4 @@
+from typing import Any
 from llama_index.core import SimpleDirectoryReader
 from llama_index.core.schema import MetadataMode
 from llama_index.core.node_parser import MarkdownNodeParser
@@ -34,13 +35,15 @@ def load_db():
 
     texts = [node.get_content(metadata_mode=MetadataMode.NONE) for node in nodes]
 
-    metadata_lst = []
+    metadata_lst: list[dict[str, Any]] = []
     word = "documents"
     url = "https://docs.pola.rs/user-guide"
 
     for node in nodes:
         node.get_content()
-        meta = node.metadata | {"text": node.get_content(metadata_mode=MetadataMode.NONE)}
+        meta = node.metadata | {
+            "text": node.get_content(metadata_mode=MetadataMode.NONE)
+        }
         file_path = node.metadata["file_path"]
         start_idx = file_path.find(word) + len(word)
         link = url + file_path[start_idx:-8]
@@ -67,8 +70,7 @@ def load_db():
             # Add object to batch queue
             batch.add_object(properties=doc, vector=embeddings[idx])
             # Batcher automatically sends batches
-    
-    documents.batch.results
+
     # Check for failed objects
     if len(documents.batch.failed_objects) > 0:
         print(f"Failed to import {len(documents.batch.failed_objects)} objects")
