@@ -84,6 +84,42 @@ wget --header 'content-type: application/json' --post-data '{
     "vectorIndexType": "hnsw",
     "vectorizer": "none"
 }' http://localhost:${WEAVIATE_PORT}/v1/schema
+
+wget --header 'content-type: application/json' --post-data '{
+    "class": "cache",
+    "properties": [
+        {
+            "dataType": [
+                "text"
+            ],
+            "indexFilterable": true,
+            "indexSearchable": true,
+            "name": "query",
+            "tokenization": "word"
+        },
+        {
+            "dataType": [
+                "date"
+            ],
+            "indexFilterable": true,
+            "indexSearchable": false,
+            "name": "created_on"
+        },
+        {
+            "dataType": [
+                "date"
+            ],
+            "indexFilterable": true,
+            "indexSearchable": false,
+            "name": "last_modified_date"
+        }
+    ],
+    "vectorIndexConfig": {
+        "distance": "cosine"
+    },
+    "vectorIndexType": "hnsw",
+    "vectorizer": "none"
+}' http://localhost:${WEAVIATE_PORT}/v1/schema
 echo 'done'
 
 wait $pid
