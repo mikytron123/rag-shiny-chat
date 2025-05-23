@@ -35,6 +35,7 @@ services:
   weaviate-loader:
     depends_on:
       - weaviate
+      - text-embeddings-inference
     build: 
       context: ./weaviate_loader
     env_file:
@@ -51,7 +52,6 @@ services:
 
   weaviate:
     build: ./weaviate
-    image: cr.weaviate.io/semitechnologies/weaviate:1.25.4
     depends_on:
       - text-embeddings-inference
       - prometheus

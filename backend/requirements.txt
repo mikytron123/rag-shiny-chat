@@ -6,6 +6,8 @@ aiohttp==3.11.18
     # via llama-index-core
 aiosignal==1.3.2
     # via aiohttp
+aiosqlite==0.21.0
+    # via llama-index-core
 annotated-types==0.7.0
     # via pydantic
 anyio==4.9.0
@@ -37,7 +39,7 @@ cffi==1.17.1
     # via cryptography
 charset-normalizer==3.4.2
     # via requests
-click==8.1.8
+click==8.2.1
     # via
     #   litestar
     #   nltk
@@ -45,7 +47,7 @@ click==8.1.8
     #   uvicorn
 colorama==0.4.6
     # via griffe
-cryptography==44.0.2
+cryptography==45.0.2
     # via authlib
 dataclasses-json==0.6.7
     # via llama-index-core
@@ -64,7 +66,7 @@ editorconfig==0.17.0
     # via jsbeautifier
 environ-config==24.1.0
     # via -r requirements.in
-faker==37.1.0
+faker==37.3.0
     # via polyfactory
 fast-query-parsers==1.0.3
     # via litestar
@@ -74,11 +76,11 @@ frozenlist==1.6.0
     # via
     #   aiohttp
     #   aiosignal
-fsspec==2025.3.2
+fsspec==2025.5.0
     # via llama-index-core
 googleapis-common-protos==1.70.0
     # via opentelemetry-exporter-otlp-proto-http
-greenlet==3.2.1
+greenlet==3.2.2
     # via sqlalchemy
 griffe==1.7.3
     # via banks
@@ -121,7 +123,7 @@ jinja2==3.1.6
     # via
     #   banks
     #   litestar
-joblib==1.4.2
+joblib==1.5.1
     # via nltk
 jsbeautifier==1.15.4
     # via litestar
@@ -129,31 +131,31 @@ jsonpatch==1.33
     # via langchain-core
 jsonpointer==3.0.0
     # via jsonpatch
-langchain==0.3.24
+langchain==0.3.25
     # via -r requirements.in
-langchain-core==0.3.57
+langchain-core==0.3.61
     # via
     #   langchain
     #   langchain-ollama
     #   langchain-text-splitters
     #   langchain-weaviate
-langchain-ollama==0.3.2
+langchain-ollama==0.3.3
     # via -r requirements.in
 langchain-text-splitters==0.3.8
     # via langchain
 langchain-weaviate==0.0.4
     # via -r requirements.in
-langfuse==2.60.3
+langfuse==2.60.5
     # via -r requirements.in
-langsmith==0.3.40
+langsmith==0.3.42
     # via
     #   langchain
     #   langchain-core
-litestar==2.15.2
+litestar==2.16.0
     # via -r requirements.in
 litestar-htmx==0.4.1
     # via litestar
-llama-index-core==0.12.34.post1
+llama-index-core==0.12.37
     # via
     #   -r requirements.in
     #   llama-index-readers-file
@@ -171,7 +173,7 @@ msgspec==0.19.0
     # via
     #   -r requirements.in
     #   litestar
-multidict==6.4.3
+multidict==6.4.4
     # via
     #   aiohttp
     #   litestar
@@ -195,7 +197,7 @@ ollama==0.4.8
     # via
     #   -r requirements.in
     #   langchain-ollama
-opentelemetry-api==1.32.1
+opentelemetry-api==1.33.1
     # via
     #   -r requirements.in
     #   opentelemetry-distro
@@ -205,37 +207,37 @@ opentelemetry-api==1.32.1
     #   opentelemetry-instrumentation-httpx
     #   opentelemetry-sdk
     #   opentelemetry-semantic-conventions
-opentelemetry-distro==0.53b1
+opentelemetry-distro==0.54b1
     # via -r requirements.in
-opentelemetry-exporter-otlp-proto-common==1.32.1
+opentelemetry-exporter-otlp-proto-common==1.33.1
     # via opentelemetry-exporter-otlp-proto-http
-opentelemetry-exporter-otlp-proto-http==1.32.1
+opentelemetry-exporter-otlp-proto-http==1.33.1
     # via -r requirements.in
-opentelemetry-instrumentation==0.53b1
+opentelemetry-instrumentation==0.54b1
     # via
     #   opentelemetry-distro
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-httpx
-opentelemetry-instrumentation-asgi==0.53b1
+opentelemetry-instrumentation-asgi==0.54b1
     # via litestar
-opentelemetry-instrumentation-httpx==0.53b1
+opentelemetry-instrumentation-httpx==0.54b1
     # via -r requirements.in
-opentelemetry-proto==1.32.1
+opentelemetry-proto==1.33.1
     # via
     #   opentelemetry-exporter-otlp-proto-common
     #   opentelemetry-exporter-otlp-proto-http
-opentelemetry-sdk==1.32.1
+opentelemetry-sdk==1.33.1
     # via
     #   -r requirements.in
     #   opentelemetry-distro
     #   opentelemetry-exporter-otlp-proto-http
-opentelemetry-semantic-conventions==0.53b1
+opentelemetry-semantic-conventions==0.54b1
     # via
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-httpx
     #   opentelemetry-sdk
-opentelemetry-util-http==0.53b1
+opentelemetry-util-http==0.54b1
     # via
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-httpx
@@ -255,7 +257,7 @@ pandas==2.2.3
     #   llama-index-readers-file
 pillow==11.2.1
     # via llama-index-core
-platformdirs==4.3.7
+platformdirs==4.3.8
     # via banks
 polyfactory==2.21.0
     # via litestar
@@ -271,7 +273,7 @@ protobuf==5.29.4
     #   opentelemetry-proto
 pycparser==2.22
     # via cffi
-pydantic==2.11.4
+pydantic==2.11.5
     # via
     #   banks
     #   langchain
@@ -285,7 +287,7 @@ pydantic-core==2.33.2
     # via pydantic
 pygments==2.19.1
     # via rich
-pypdf==5.4.0
+pypdf==5.5.0
     # via llama-index-readers-file
 python-dateutil==2.9.0.post0
     # via pandas
@@ -300,7 +302,7 @@ pyyaml==6.0.2
     #   litestar
     #   llama-index-core
     #   uvicorn
-redis==6.0.0
+redis==6.1.0
     # via -r requirements.in
 regex==2024.11.6
     # via
@@ -321,9 +323,9 @@ rich==14.0.0
     # via
     #   litestar
     #   rich-click
-rich-click==1.8.8
+rich-click==1.8.9
     # via litestar
-setuptools==80.1.0
+setuptools==80.8.0
     # via grpcio-tools
 simsimd==6.2.1
     # via langchain-weaviate
@@ -335,7 +337,7 @@ sniffio==1.3.1
     # via anyio
 soupsieve==2.7
     # via beautifulsoup4
-sqlalchemy==2.0.40
+sqlalchemy==2.0.41
     # via
     #   langchain
     #   llama-index-core
@@ -353,6 +355,7 @@ tqdm==4.67.1
     #   nltk
 typing-extensions==4.13.2
     # via
+    #   aiosqlite
     #   anyio
     #   beautifulsoup4
     #   langchain-core
@@ -370,7 +373,7 @@ typing-inspect==0.9.0
     # via
     #   dataclasses-json
     #   llama-index-core
-typing-inspection==0.4.0
+typing-inspection==0.4.1
     # via pydantic
 tzdata==2025.2
     # via
@@ -388,7 +391,7 @@ validators==0.34.0
     # via weaviate-client
 watchfiles==1.0.5
     # via uvicorn
-weaviate-client==4.14.1
+weaviate-client==4.14.4
     # via
     #   -r requirements.in
     #   langchain-weaviate

@@ -15,6 +15,8 @@ class AppConfig:
     langfuse_project_secret_key = environ.var()
     redis_host = environ.var()
     redis_port = environ.var()
+    model = environ.var()
+    llm = environ.var()
 
 
 config = environ.to_config(AppConfig)

@@ -2,7 +2,7 @@
 
 pid=$!
 
-sleep 5
+sleep 10
 
 echo 'creating collection'
 wget --header 'content-type: application/json' --post-data '{
@@ -13,7 +13,7 @@ wget --header 'content-type: application/json' --post-data '{
                 "text"
             ],
             "indexFilterable": true,
-            "indexSearchable": true,
+            "indexSearchable": false,
             "name": "file_path",
             "tokenization": "word"
         },
@@ -22,7 +22,7 @@ wget --header 'content-type: application/json' --post-data '{
                 "text"
             ],
             "indexFilterable": true,
-            "indexSearchable": true,
+            "indexSearchable": false,
             "name": "file_name",
             "tokenization": "word"
         },
@@ -31,7 +31,7 @@ wget --header 'content-type: application/json' --post-data '{
                 "text"
             ],
             "indexFilterable": true,
-            "indexSearchable": true,
+            "indexSearchable": false,
             "name": "file_type",
             "tokenization": "word"
         },
@@ -73,8 +73,17 @@ wget --header 'content-type: application/json' --post-data '{
                 "text"
             ],
             "indexFilterable": true,
-            "indexSearchable": true,
+            "indexSearchable": false,
             "name": "link",
+            "tokenization": "word"
+        },
+        {
+            "dataType": [
+                "text"
+            ],
+            "indexFilterable": true,
+            "indexSearchable": false,
+            "name": "embedding_model",
             "tokenization": "word"
         }
     ],
@@ -95,6 +104,24 @@ wget --header 'content-type: application/json' --post-data '{
             "indexFilterable": true,
             "indexSearchable": true,
             "name": "query",
+            "tokenization": "word"
+        },
+        {
+            "dataType": [
+                "text"
+            ],
+            "indexFilterable": true,
+            "indexSearchable": false,
+            "name": "embedding_model",
+            "tokenization": "word"
+        },
+        {
+            "dataType": [
+                "text"
+            ],
+            "indexFilterable": true,
+            "indexSearchable": false,
+            "name": "llm",
             "tokenization": "word"
         },
         {

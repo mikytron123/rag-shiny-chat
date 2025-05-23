@@ -17,7 +17,6 @@ from litestar.exceptions import HTTPException
 from constants import system_prompt, collection_name, alpha, k
 from langchain_weaviate.vectorstores import WeaviateVectorStore
 import ollama
-import traceback
 import weaviate
 from teiembedding import TextEmbeddingsInference
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
@@ -39,6 +38,8 @@ LANGFUSE_HOST = config.langfuse_host
 LANGFUSE_PORT = config.langfuse_port
 REDIS_HOST = config.redis_host
 REDIS_PORT = config.redis_port
+EMBEDDING_MODEL = config.model
+LLM = config.llm
 
 resource = Resource(attributes={SERVICE_NAME: "ragproject"})
 
@@ -84,10 +85,8 @@ metrics_dist = {
         unit="1",
     ),
     "cache_requests": meter.create_counter(
-        name="cache.total.requests",
-        description="Number of requests to Cache",
-        unit="1"
-    )
+        name="cache.total.requests", description="Number of requests to Cache", unit="1"
+    ),
 }
 
 langfuse_handler = CallbackHandler(
@@ -109,7 +108,10 @@ def on_startup(app: Litestar):
     tei_client = TextEmbeddingsInference(url=tei_url, normalize=True)
 
     app.state.db_client = WeaviateStore(
-        weaviate_client=db_client, tei_client=tei_client
+        weaviate_client=db_client,
+        tei_client=tei_client,
+        embedding_model=EMBEDDING_MODEL,
+        llm=LLM,
     )
     app.state.ollama_client = ollama.Client(host=f"http://{OLLAMA_HOST}:{OLLAMA_PORT}")
     app.state.redis_client = RedisStore(host=REDIS_HOST, port=REDIS_PORT)
@@ -121,12 +123,11 @@ def on_shutdown(app: Litestar):
 
 
 def create_chain(data: Parameters):
-    """ Creates langchain rag chain
-    """
+    """Creates langchain rag chain"""
     client = weaviate.connect_to_local(host=WEAVIATE_HOST, port=(WEAVIATE_PORT))
     tei_url = f"http://{TEI_HOST}:{TEI_PORT}"
     embeddings = TextEmbeddingsInference(url=tei_url, normalize=True)
-    
+
     db = WeaviateVectorStore(
         client=client, index_name=collection_name, text_key="text", embedding=embeddings
     )
@@ -134,7 +135,7 @@ def create_chain(data: Parameters):
     retriever = db.as_retriever(
         search_kwargs=dict(alpha=alpha, k=k, vector=query_embedding)
     )
-    
+
     llm = OllamaLLM(
         base_url=f"http://{OLLAMA_HOST}:{OLLAMA_PORT}",
         model=data.model,
@@ -152,9 +153,7 @@ def create_chain(data: Parameters):
     return chain
 
 
-async def llm_generator(
-    state: State, data: Parameters
-) -> AsyncGenerator[bytes, None]:
+async def llm_generator(state: State, data: Parameters) -> AsyncGenerator[bytes, None]:
     vec_db_client: WeaviateStore = state.db_client
     result = vec_db_client.search_vector_cache(data.prompt)
     redis_client: RedisStore = state.redis_client

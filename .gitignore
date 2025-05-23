@@ -1,3 +1,5 @@
 */__pycache__/
+backend/shared/__pycache__/*
 .env
 data/*
+weaviate_loader/.mypy_cache/*
