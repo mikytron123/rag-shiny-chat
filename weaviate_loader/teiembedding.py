@@ -1,6 +1,6 @@
 from itertools import islice
-from typing import List
-
+from typing import Any, List
+import time
 from pydantic import BaseModel
 import httpx
 
@@ -18,6 +18,20 @@ class TextEmbeddingsInference(BaseModel):
     url: str
     """Url of text embeddings inference server"""
     normalize: bool = True
+
+    def model_post_init(self, context: Any) -> None:
+        # healthcheck for TEI server
+        while True:
+            print("-----------")
+            try:
+                resp = httpx.get(f"{self.url}/health")
+                if resp.status_code==200:
+                    break
+            except Exception as e:
+                print(e)
+                time.sleep(5)
+                continue
+            time.sleep(5)
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Compute doc embeddings using a Text Embeddings Inference server.
