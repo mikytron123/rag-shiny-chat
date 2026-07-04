@@ -1,10 +1,10 @@
-from shiny import App, ui, Inputs, Outputs, Session
-import httpx
-import os
 import json
-from shared.api_models import ModelSchema
+
+import httpx
 import msgspec
 from appconfig import config
+from shared.api_models import ModelSchema
+from shiny import App, Inputs, Outputs, Session, ui
 
 SERVER_HOST = config.server_host
 SERVER_PORT = config.server_port
@@ -12,6 +12,7 @@ client = httpx.AsyncClient(timeout=120)
 
 decoder = msgspec.json.Decoder(type=ModelSchema)
 
+# Get available models from the server
 r = httpx.get(f"http://{SERVER_HOST}:{SERVER_PORT}/models")
 choices = decoder.decode(r.content).models
 
@@ -38,7 +39,6 @@ app_ui = ui.page_fluid(
 
 def server(input: Inputs, output: Outputs, session: Session) -> None:
     chat = ui.Chat(id="chat", tokenizer=None)
-    chat.ui()
 
     async def respone_to_iterator(r: httpx.Response):
         links_list: list[str] = []
@@ -46,8 +46,7 @@ def server(input: Inputs, output: Outputs, session: Session) -> None:
             data_dict = json.loads(message.decode())
             if "completion" in data_dict:
                 yield data_dict["completion"]
-            elif "links" in data_dict:
-                links_list = data_dict["links"]
+            links_list = data_dict.get("links", [])
         yield "\n\nCitations\n"
         for link in links_list:
             yield f"- {link}\n"

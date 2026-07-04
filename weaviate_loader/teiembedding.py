@@ -1,8 +1,9 @@
-from itertools import islice
-from typing import Any, List
 import time
-from pydantic import BaseModel
+from itertools import islice
+from typing import Any
+
 import httpx
+from pydantic import BaseModel
 
 
 def batched(iterable, n):
@@ -25,7 +26,7 @@ class TextEmbeddingsInference(BaseModel):
             print("-----------")
             try:
                 resp = httpx.get(f"{self.url}/health")
-                if resp.status_code==200:
+                if resp.status_code == 200:
                     break
             except Exception as e:
                 print(e)
@@ -33,7 +34,7 @@ class TextEmbeddingsInference(BaseModel):
                 continue
             time.sleep(5)
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
         """Compute doc embeddings using a Text Embeddings Inference server.
 
         Args:
@@ -54,7 +55,7 @@ class TextEmbeddingsInference(BaseModel):
 
         return embeddings
 
-    def embed_query(self, text: str) -> List[float]:
+    def embed_query(self, text: str) -> list[float]:
         """Compute query embeddings using a Text Embeddings Inference server.
 
         Args:

@@ -2,6 +2,7 @@ litestar[standard,opentelemetry]
 langchain
 langchain-ollama
 langchain-weaviate
+langchain-core
 weaviate-client
 llama-index-core
 llama-index-readers-file
@@ -12,9 +13,8 @@ opentelemetry-distro
 opentelemetry-exporter-otlp-proto-http
 httpx
 ollama
-pandas
 langfuse
 msgspec
 environ-config
 redis
-
+pydantic

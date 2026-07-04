@@ -1,7 +1,9 @@
 import hashlib
-import redis
+
 import msgspec
+import redis
 from shared.api_models import LlmCompletionSchema
+
 
 class RedisStore:
     def __init__(self, host="localhost", port=6379, db=0, password=None):
@@ -49,7 +51,7 @@ class RedisStore:
         key = self._get_key_hash(input_string)
         value = self.redis.get(key)
         decoder = msgspec.msgpack.Decoder(type=LlmCompletionSchema)
-        
+
         if value is None:
             raise ValueError(f"key is missing {input_string}")
         assert isinstance(value, bytes)

@@ -1,35 +1,37 @@
 import io
-from pydantic import BaseModel, Field
-from typing import AsyncGenerator, Optional
-from langchain_ollama import OllamaLLM
-from litestar import Litestar, post, get
-from litestar.response import Stream
-from litestar.di import Provide
-from litestar.datastructures import State
-from langchain.chains.retrieval import create_retrieval_chain
+from collections.abc import AsyncGenerator
+
+from appconfig import config
+from constants import alpha, collection_name, k, system_prompt
 from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain.chains.retrieval import create_retrieval_chain
 from langchain_core.prompts import ChatPromptTemplate
-from utils import get_num_tokens
-from redistore import RedisStore
-from shared.api_models import LlmCompletionSchema, ModelSchema
-from litestar.serialization import encode_json
-from litestar.contrib.opentelemetry import OpenTelemetryConfig, OpenTelemetryPlugin
-from litestar.exceptions import HTTPException
-from constants import system_prompt, collection_name, alpha, k
-from langchain_weaviate.vectorstores import WeaviateVectorStore
-import ollama
-import weaviate
-from teiembedding import TextEmbeddingsInference
-from opentelemetry.sdk.resources import SERVICE_NAME, Resource
-from opentelemetry import metrics
 from langchain_core.runnables.config import RunnableConfig
-from opentelemetry.metrics._internal.instrument import Counter
+from langchain_ollama import OllamaLLM
+from langchain_weaviate.vectorstores import WeaviateVectorStore
+from langfuse.callback import CallbackHandler
+from litestar import Litestar, get, post
+from litestar.contrib.opentelemetry import OpenTelemetryConfig, OpenTelemetryPlugin
+from litestar.datastructures import State
+from litestar.di import Provide
+from litestar.exceptions import HTTPException
+from litestar.response import Stream
+from litestar.serialization import encode_json
+from opentelemetry import metrics
 from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
+from opentelemetry.metrics._internal.instrument import Counter
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
-from langfuse.callback import CallbackHandler
-from appconfig import config
+from opentelemetry.sdk.resources import SERVICE_NAME, Resource
+from pydantic import BaseModel, Field
+from redistore import RedisStore
+from shared.api_models import LlmCompletionSchema, ModelSchema
+from teiembedding import TextEmbeddingsInference
+from utils import get_num_tokens
 from weaviatestore import WeaviateStore
+
+import ollama
+import weaviate
 
 OLLAMA_HOST = config.ollama_host
 OLLAMA_PORT = config.ollama_port
@@ -44,10 +46,12 @@ LLM = config.llm
 TELEMETRY_ENABLED = config.telemetry_enabled
 
 meterProvider: MeterProvider | None = None
-metrics_dist: dict[str, Counter] = dict()
+metrics_dist: dict[str, Counter] = {}
 langfuse_handler = None
 
+
 def setup_opentelemetry():
+    """Sets up OpenTelemetry metrics exporting to Alloy."""
     if not TELEMETRY_ENABLED:
         return
     global metrics_dist
@@ -99,6 +103,7 @@ def setup_opentelemetry():
 
 
 def setup_langfuse():
+    """Sets up Langfuse callback handler."""
     if not TELEMETRY_ENABLED:
         return
 
@@ -117,6 +122,7 @@ def setup_langfuse():
 def get_metrics_dist():
     return metrics_dist
 
+
 def get_langfuse_handler():
     return langfuse_handler
 
@@ -128,11 +134,14 @@ class Parameters(BaseModel):
 
 
 def on_startup(app: Litestar):
+    """Initializes database and clients on startup"""
 
+    # Initialize telemetry if enabled
     if TELEMETRY_ENABLED:
         setup_opentelemetry()
         setup_langfuse()
 
+    # Initialize database clients, embedding model, LLM, and guardrails
     db_client = weaviate.connect_to_local(host=WEAVIATE_HOST, port=(WEAVIATE_PORT))
     tei_url = f"http://{TEI_HOST}:{TEI_PORT}"
     tei_client = TextEmbeddingsInference(url=tei_url, normalize=True)
@@ -163,7 +172,7 @@ def create_chain(data: Parameters):
     )
     query_embedding = embeddings.embed_query(data.prompt)
     retriever = db.as_retriever(
-        search_kwargs=dict(alpha=alpha, k=k, vector=query_embedding)
+        search_kwargs={"alpha": alpha, "k": k, "vector": query_embedding}
     )
 
     llm = OllamaLLM(
@@ -203,7 +212,8 @@ async def llm_generator(
     langfuse_handler: CallbackHandler | None,
     metrics_dist: dict[str, Counter],
 ) -> AsyncGenerator[bytes, None]:
-    
+    """Generator function to stream LLM responses"""
+
     vec_db_client: WeaviateStore = state.db_client
     redis_client: RedisStore = state.redis_client
 
@@ -238,7 +248,7 @@ async def llm_generator(
         config = None
     else:
         config = RunnableConfig(callbacks=[langfuse_handler])
-        
+
     async for chunk in chain.astream(
         {"input": data.prompt},
         config=config,
@@ -322,7 +332,7 @@ async def post_llm(
             config = None
         else:
             config = RunnableConfig(callbacks=[langfuse_handler])
-        
+
         ans = chain.invoke({"input": data.prompt}, config=config)
 
         num_output_tokens = get_num_tokens(

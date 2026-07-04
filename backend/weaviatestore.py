@@ -1,9 +1,11 @@
-from pydantic import BaseModel, ConfigDict
-import weaviate
-from teiembedding import TextEmbeddingsInference
 import datetime
-from weaviate.classes.query import Filter
+
 from constants import cache_collection_name
+from pydantic import BaseModel, ConfigDict
+from teiembedding import TextEmbeddingsInference
+from weaviate.classes.query import Filter
+
+import weaviate
 
 
 class WeaviateStore(BaseModel):
@@ -23,7 +25,7 @@ class WeaviateStore(BaseModel):
             List of matching text in the vector db
         """
 
-        last_24h = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(
+        last_24h = datetime.datetime.now(datetime.UTC) - datetime.timedelta(
             hours=24
         )
         filter_date = Filter.by_property("last_modified_date").greater_than(last_24h)
@@ -49,7 +51,7 @@ class WeaviateStore(BaseModel):
         collection.data.update(
             uuid=update_id,
             properties={
-                "last_modified_date": datetime.datetime.now(datetime.timezone.utc)
+                "last_modified_date": datetime.datetime.now(datetime.UTC)
             },
         )
         return [str(result.objects[0].properties["query"])]
@@ -64,7 +66,7 @@ class WeaviateStore(BaseModel):
         vec = self.tei_client.embed_query(text)
 
         collection = self.weaviate_client.collections.get(cache_collection_name)
-        current_time = datetime.datetime.now(datetime.timezone.utc)
+        current_time = datetime.datetime.now(datetime.UTC)
         property = {
             "query": text,
             "created_on": current_time,

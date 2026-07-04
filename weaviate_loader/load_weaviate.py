@@ -1,12 +1,14 @@
+import traceback
 from typing import Any
-from llama_index.core import SimpleDirectoryReader
-from llama_index.core.schema import MetadataMode
-from llama_index.core.node_parser import MarkdownNodeParser
-import weaviate
-from teiembedding import TextEmbeddingsInference
 
 import pandas as pd
 from appconfig import config
+from llama_index.core import SimpleDirectoryReader
+from llama_index.core.node_parser import MarkdownNodeParser
+from llama_index.core.schema import MetadataMode
+from teiembedding import TextEmbeddingsInference
+
+import weaviate
 
 WEAVIATE_HOST = config.weaviate_host
 WEAVIATE_PORT = config.weaviate_port
@@ -68,7 +70,7 @@ def load_db():
 
                 for k, v in doc.items():
                     if "date" in k:
-                        doc[k] = pd.to_datetime(v,utc=True).to_pydatetime()
+                        doc[k] = pd.to_datetime(v, utc=True).to_pydatetime()
 
                 # Add object to batch queue
                 batch.add_object(properties=doc, vector=embeddings[idx])
@@ -79,6 +81,7 @@ def load_db():
             print(f"Failed to import {len(documents.batch.failed_objects)} objects")
     except Exception as e:
         print(e)
+        print(traceback.format_exc())
     finally:
         if client is not None:
             client.close()

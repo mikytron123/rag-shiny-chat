@@ -1,9 +1,8 @@
 from itertools import islice
-from typing import List
 
+import httpx
 from langchain_core.embeddings import Embeddings
 from pydantic import BaseModel
-import httpx
 
 
 def batched(iterable, n):
@@ -19,7 +18,7 @@ class TextEmbeddingsInference(BaseModel, Embeddings):
     """Url of text embeddings inference server"""
     normalize: bool = True
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
         """Compute doc embeddings using a Text Embeddings Inference server.
 
         Args:
@@ -40,7 +39,7 @@ class TextEmbeddingsInference(BaseModel, Embeddings):
 
         return embeddings
 
-    def embed_query(self, text: str) -> List[float]:
+    def embed_query(self, text: str) -> list[float]:
         """Compute query embeddings using a Text Embeddings Inference server.
 
         Args:

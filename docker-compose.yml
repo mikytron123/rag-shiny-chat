@@ -26,10 +26,12 @@ services:
         condition: service_started
       weaviate:
         condition: service_started
-      alloy:
+      valkey:
         condition: service_started
-      langfuse-worker:
-        condition: service_started
+        #      alloy:
+        #        condition: service_started
+        #      langfuse-worker:
+        #        condition: service_started
 
 
   weaviate-loader:
