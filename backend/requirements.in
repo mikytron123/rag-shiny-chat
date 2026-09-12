@@ -1,8 +1,9 @@
 litestar[standard,opentelemetry]
-langchain
-langchain-ollama
-langchain-weaviate
-langchain-core
+langchain>=1.0.0
+langchain-classic>=1.0.0
+langchain-ollama>=1.0.0
+langchain-weaviate>=0.0.8
+langchain-core>=1.0.0
 weaviate-client
 llama-index-core
 llama-index-readers-file

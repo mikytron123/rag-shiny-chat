@@ -3,30 +3,22 @@ from collections.abc import AsyncGenerator
 
 from appconfig import config
 from constants import alpha, collection_name, k, system_prompt
-from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain.chains.retrieval import create_retrieval_chain
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables.config import RunnableConfig
 from langchain_ollama import OllamaLLM
 from langchain_weaviate.vectorstores import WeaviateVectorStore
-from langfuse.callback import CallbackHandler
+from langchain_classic.chains.combine_documents import create_stuff_documents_chain
+from langchain_classic.chains.retrieval import create_retrieval_chain
 from litestar import Litestar, get, post
-from litestar.contrib.opentelemetry import OpenTelemetryConfig, OpenTelemetryPlugin
 from litestar.datastructures import State
-from litestar.di import Provide
 from litestar.exceptions import HTTPException
 from litestar.response import Stream
 from litestar.serialization import encode_json
-from opentelemetry import metrics
-from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
-from opentelemetry.metrics._internal.instrument import Counter
-from opentelemetry.sdk.metrics import MeterProvider
-from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
-from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from pydantic import BaseModel, Field
 from redistore import RedisStore
 from shared.api_models import LlmCompletionSchema, ModelSchema
 from teiembedding import TextEmbeddingsInference
+from telemetry import Telemetry
 from utils import get_num_tokens
 from weaviatestore import WeaviateStore
 
@@ -45,87 +37,6 @@ EMBEDDING_MODEL = config.model
 LLM = config.llm
 TELEMETRY_ENABLED = config.telemetry_enabled
 
-meterProvider: MeterProvider | None = None
-metrics_dist: dict[str, Counter] = {}
-langfuse_handler = None
-
-
-def setup_opentelemetry():
-    """Sets up OpenTelemetry metrics exporting to Alloy."""
-    if not TELEMETRY_ENABLED:
-        return
-    global metrics_dist
-    global meterProvider
-
-    resource = Resource(attributes={SERVICE_NAME: "ragproject"})
-
-    reader = PeriodicExportingMetricReader(
-        OTLPMetricExporter(endpoint="http://alloy:4318/v1/metrics")
-    )
-
-    meterProvider = MeterProvider(resource=resource, metric_readers=[reader])
-    metrics.set_meter_provider(meterProvider)
-
-    meter = metrics.get_meter("ragproject.backend")
-
-    metrics_dist = {
-        "genai_requests": meter.create_counter(
-            name="genai.total.requests",
-            description="Number of requests to GenAI",
-            unit="1",
-        ),
-        "genai_prompt_tokens": meter.create_counter(
-            name="genai.usage.input.tokens",
-            description="Number of prompt tokens processed.",
-            unit="1",
-        ),
-        "genai_completion_tokens": meter.create_counter(
-            name="genai.usage.completion.tokens",
-            description="Number of completion tokens processed.",
-            unit="1",
-        ),
-        "genai_total_tokens": meter.create_counter(
-            name="genai.usage.total.tokens",
-            description="Number of total tokens processed.",
-            unit="1",
-        ),
-        "db_requests": meter.create_counter(
-            name="db.total.requests",
-            description="Number of requests to VectorDBs",
-            unit="1",
-        ),
-        "cache_requests": meter.create_counter(
-            name="cache.total.requests",
-            description="Number of requests to Cache",
-            unit="1",
-        ),
-    }
-
-
-def setup_langfuse():
-    """Sets up Langfuse callback handler."""
-    if not TELEMETRY_ENABLED:
-        return
-
-    LANGFUSE_HOST = config.langfuse_host
-    LANGFUSE_PORT = config.langfuse_port
-
-    global langfuse_handler
-
-    langfuse_handler = CallbackHandler(
-        public_key=config.langfuse_project_public_key,
-        secret_key=config.langfuse_project_secret_key,
-        host=f"http://{LANGFUSE_HOST}:{LANGFUSE_PORT}",
-    )
-
-
-def get_metrics_dist():
-    return metrics_dist
-
-
-def get_langfuse_handler():
-    return langfuse_handler
-
 
 class Parameters(BaseModel):
     model: str
@@ -136,10 +47,8 @@ class Parameters(BaseModel):
 def on_startup(app: Litestar):
     """Initializes database and clients on startup"""
 
-    # Initialize telemetry if enabled
-    if TELEMETRY_ENABLED:
-        setup_opentelemetry()
-        setup_langfuse()
+    app.state.telemetry = Telemetry()
+    app.state.telemetry.initialize()
 
     # Initialize database clients, embedding model, LLM, and guardrails
     db_client = weaviate.connect_to_local(host=WEAVIATE_HOST, port=(WEAVIATE_PORT))
@@ -209,18 +118,18 @@ def retreive_cache(
 async def llm_generator(
     state: State,
     data: Parameters,
-    langfuse_handler: CallbackHandler | None,
-    metrics_dist: dict[str, Counter],
 ) -> AsyncGenerator[bytes, None]:
     """Generator function to stream LLM responses"""
+
+    telemetry = state.telemetry
+    langfuse_handler = telemetry.get_langfuse_handler()
 
     vec_db_client: WeaviateStore = state.db_client
     redis_client: RedisStore = state.redis_client
 
     cached_data = retreive_cache(vec_db_client, redis_client, data.prompt)
     if cached_data is not None:
-        if TELEMETRY_ENABLED:
-            metrics_dist["cache_requests"].add(1)
+        telemetry.record_cache_request()
 
         completion: str = cached_data.completion
         link_list: list[str] = cached_data.links
@@ -236,9 +145,7 @@ async def llm_generator(
     link_dict = {}
 
     num_input_tokens = get_num_tokens(state.ollama_client, data.model, data.prompt)
-
-    if TELEMETRY_ENABLED:
-        metrics_dist["genai_prompt_tokens"].add(num_input_tokens)
+    telemetry.record_prompt_tokens(num_input_tokens)
 
     num_output_tokens = 0
     completion = ""
@@ -262,11 +169,10 @@ async def llm_generator(
                 "links": list({doc.metadata["link"] for doc in chunk["context"]})
             }
 
-    if TELEMETRY_ENABLED:
-        metrics_dist["genai_completion_tokens"].add(num_output_tokens)
-        metrics_dist["genai_total_tokens"].add(num_input_tokens + num_output_tokens)
-        metrics_dist["db_requests"].add(1)
-        metrics_dist["genai_requests"].add(1)
+    telemetry.record_genai_metrics(
+        input_tokens=num_input_tokens,
+        output_tokens=num_output_tokens,
+    )
 
     completion = string_buffer.getvalue()
     redis_value = {"completion": completion} | link_dict
@@ -275,21 +181,12 @@ async def llm_generator(
     yield encode_json(link_dict)
 
 
-@post(
-    "/llm/stream",
-    dependencies={
-        "langfuse_handler": Provide(get_langfuse_handler),
-        "metrics_dist": Provide(get_metrics_dist),
-    },
-    sync_to_thread=False,
-)
+@post("/llm/stream", sync_to_thread=False)
 async def post_llm_stream(
     state: State,
     data: Parameters,
-    langfuse_handler: CallbackHandler | None,
-    metrics_dist: dict[str, Counter],
 ) -> Stream:
-    return Stream(llm_generator(state, data, langfuse_handler, metrics_dist))
+    return Stream(llm_generator(state, data))
 
 
 @get("models")
@@ -300,29 +197,22 @@ async def get_models(state: State) -> ModelSchema:
     return ModelSchema(models=choices)
 
 
-@post(
-    "/llm/invoke",
-    dependencies={
-        "langfuse_handler": Provide(get_langfuse_handler),
-        "metrics_dist": Provide(get_metrics_dist),
-    },
-    sync_to_thread=False,
-)
+@post("/llm/invoke", sync_to_thread=False)
 async def post_llm(
     state: State,
     data: Parameters,
-    langfuse_handler: CallbackHandler | None,
-    metrics_dist: dict[str, Counter],
 ) -> LlmCompletionSchema:
     try:
+        telemetry = state.telemetry
+        langfuse_handler = telemetry.get_langfuse_handler()
+
         vec_db_client: WeaviateStore = state.db_client
         redis_client: RedisStore = state.redis_client
 
         cached_data = retreive_cache(vec_db_client, redis_client, data.prompt)
 
         if cached_data is not None:
-            if TELEMETRY_ENABLED:
-                metrics_dist["cache_requests"].add(1)
+            telemetry.record_cache_request()
             return cached_data
 
         num_input_tokens = get_num_tokens(state.ollama_client, data.model, data.prompt)
@@ -338,16 +228,10 @@ async def post_llm(
         num_output_tokens = get_num_tokens(
             state.ollama_client, data.model, ans["answer"]
         )
-        if TELEMETRY_ENABLED:
-            metrics_dist["genai_requests"].add(
-                1,
-            )
-
-            metrics_dist["genai_prompt_tokens"].add(num_input_tokens)
-            metrics_dist["genai_completion_tokens"].add(num_output_tokens)
-
-            metrics_dist["genai_total_tokens"].add(num_input_tokens + num_output_tokens)
-            metrics_dist["db_requests"].add(1)
+        telemetry.record_genai_metrics(
+            input_tokens=num_input_tokens,
+            output_tokens=num_output_tokens,
+        )
 
         links_list = list({doc.metadata["link"] for doc in ans["context"]})
 
@@ -361,14 +245,8 @@ async def post_llm(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-if TELEMETRY_ENABLED:
-    open_telemetry_config = OpenTelemetryConfig(
-        meter_provider=meterProvider
-        # tracer_provider=traceProvider, meter_provider=meterProvider
-    )
-    plugins = [OpenTelemetryPlugin(open_telemetry_config)]
-else:
-    plugins = []
+telemetry = Telemetry()
+plugins = telemetry.get_plugins()
 
 app = Litestar(
     [get_models, post_llm, post_llm_stream],
