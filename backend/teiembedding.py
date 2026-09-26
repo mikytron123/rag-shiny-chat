@@ -1,6 +1,6 @@
 from itertools import islice
 
-import httpx
+import httpx2
 from langchain_core.embeddings import Embeddings
 from pydantic import BaseModel
 
@@ -34,7 +34,7 @@ class TextEmbeddingsInference(BaseModel, Embeddings):
                 "normalize": self.normalize,
                 "truncate": True,
             }
-            response = httpx.post(f"{self.url}/embed", json=payload).json()
+            response = httpx2.post(f"{self.url}/embed", json=payload).json()
             embeddings.extend(response)
 
         return embeddings

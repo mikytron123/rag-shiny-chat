@@ -4,9 +4,9 @@
 #
 #    pip-compile --output-file=requirements.txt requirements.in
 #
-anyio==4.6.0
+anyio==4.14.2
     # via
-    #   httpx
+    #   httpx2
     #   starlette
     #   watchfiles
 appdirs==1.4.4
@@ -15,30 +15,26 @@ asgiref==3.8.1
     # via shiny
 attrs==24.2.0
     # via environ-config
-certifi==2024.8.30
-    # via
-    #   httpcore
-    #   httpx
 click==8.1.7
     # via
     #   shiny
     #   uvicorn
 environ-config==24.1.0
     # via -r requirements.in
-h11==0.14.0
+h11==0.16.0
     # via
-    #   httpcore
+    #   httpcore2
     #   uvicorn
 htmltools==0.5.3
     # via shiny
-httpcore==1.0.6
-    # via httpx
-httpx==0.27.2
+httpcore2==2.12.0
+    # via httpx2
+httpx2==2.12.0
     # via -r requirements.in
-idna==3.10
+idna==3.19
     # via
     #   anyio
-    #   httpx
+    #   httpx2
 linkify-it-py==2.0.3
     # via shiny
 markdown-it-py==3.0.0
@@ -65,15 +61,17 @@ questionary==2.0.1
     # via shiny
 shiny==1.1.0
     # via -r requirements.in
-sniffio==1.3.1
-    # via
-    #   anyio
-    #   httpx
 starlette==0.39.2
     # via shiny
+truststore==0.10.4
+    # via
+    #   httpcore2
+    #   httpx2
 typing-extensions==4.12.2
     # via
+    #   anyio
     #   htmltools
+    #   httpx2
     #   shiny
 uc-micro-py==1.0.3
     # via linkify-it-py

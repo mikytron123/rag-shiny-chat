@@ -2,7 +2,7 @@ import time
 from itertools import islice
 from typing import Any
 
-import httpx
+import httpx2
 from pydantic import BaseModel
 
 
@@ -23,9 +23,8 @@ class TextEmbeddingsInference(BaseModel):
     def model_post_init(self, context: Any) -> None:
         # healthcheck for TEI server
         while True:
-            print("-----------")
             try:
-                resp = httpx.get(f"{self.url}/health")
+                resp = httpx2.get(f"{self.url}/health")
                 if resp.status_code == 200:
                     break
             except Exception as e:
@@ -50,7 +49,7 @@ class TextEmbeddingsInference(BaseModel):
                 "normalize": self.normalize,
                 "truncate": True,
             }
-            response = httpx.post(f"{self.url}/embed", json=payload).json()
+            response = httpx2.post(f"{self.url}/embed", json=payload).json()
             embeddings.extend(response)
 
         return embeddings

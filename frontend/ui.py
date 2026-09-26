@@ -1,6 +1,6 @@
 import json
 
-import httpx
+import httpx2
 import msgspec
 from appconfig import config
 from shared.api_models import ModelSchema
@@ -8,12 +8,12 @@ from shiny import App, Inputs, Outputs, Session, ui
 
 SERVER_HOST = config.server_host
 SERVER_PORT = config.server_port
-client = httpx.AsyncClient(timeout=120)
+client = httpx2.AsyncClient(timeout=120)
 
 decoder = msgspec.json.Decoder(type=ModelSchema)
 
 # Get available models from the server
-r = httpx.get(f"http://{SERVER_HOST}:{SERVER_PORT}/models")
+r = httpx2.get(f"http://{SERVER_HOST}:{SERVER_PORT}/models")
 choices = decoder.decode(r.content).models
 
 app_ui = ui.page_fluid(
@@ -40,7 +40,7 @@ app_ui = ui.page_fluid(
 def server(input: Inputs, output: Outputs, session: Session) -> None:
     chat = ui.Chat(id="chat", tokenizer=None)
 
-    async def respone_to_iterator(r: httpx.Response):
+    async def respone_to_iterator(r: httpx2.Response):
         links_list: list[str] = []
         async for message in r.aiter_bytes():
             data_dict = json.loads(message.decode())

@@ -1,7 +1,7 @@
 weaviate-client
 llama-index-core
 llama-index-readers-file
-httpx
+httpx2
 pandas
 pydantic
 environ-config

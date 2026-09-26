@@ -114,7 +114,6 @@ httptools==0.6.4
     # via uvicorn
 httpx==0.28.1
     # via
-    #   -r requirements.in
     #   langchain-core
     #   langfuse
     #   langgraph-sdk
@@ -123,7 +122,9 @@ httpx==0.28.1
     #   ollama
     #   weaviate-client
 httpx2==2.3.0
-    # via langsmith
+    # via
+    #   -r requirements.in
+    #   langsmith
 idna==3.10
     # via
     #   anyio
@@ -238,7 +239,6 @@ opentelemetry-api==1.33.1
     #   opentelemetry-exporter-otlp-proto-http
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-asgi
-    #   opentelemetry-instrumentation-httpx
     #   opentelemetry-sdk
     #   opentelemetry-semantic-conventions
 opentelemetry-distro==0.54b1
@@ -251,11 +251,8 @@ opentelemetry-instrumentation==0.54b1
     # via
     #   opentelemetry-distro
     #   opentelemetry-instrumentation-asgi
-    #   opentelemetry-instrumentation-httpx
 opentelemetry-instrumentation-asgi==0.54b1
     # via litestar
-opentelemetry-instrumentation-httpx==0.54b1
-    # via -r requirements.in
 opentelemetry-proto==1.33.1
     # via
     #   opentelemetry-exporter-otlp-proto-common
@@ -269,12 +266,9 @@ opentelemetry-semantic-conventions==0.54b1
     # via
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-asgi
-    #   opentelemetry-instrumentation-httpx
     #   opentelemetry-sdk
 opentelemetry-util-http==0.54b1
-    # via
-    #   opentelemetry-instrumentation-asgi
-    #   opentelemetry-instrumentation-httpx
+    # via opentelemetry-instrumentation-asgi
 orjson==3.10.18
     # via
     #   langgraph-sdk
@@ -452,7 +446,6 @@ wrapt==1.17.2
     #   langfuse
     #   llama-index-core
     #   opentelemetry-instrumentation
-    #   opentelemetry-instrumentation-httpx
 xxhash==4.0.1
     # via
     #   langgraph
