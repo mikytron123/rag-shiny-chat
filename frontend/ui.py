@@ -40,7 +40,7 @@ app_ui = ui.page_fluid(
 def server(input: Inputs, output: Outputs, session: Session) -> None:
     chat = ui.Chat(id="chat", tokenizer=None)
 
-    async def respone_to_iterator(r: httpx2.Response):
+    async def response_to_iterator(r: httpx2.Response):
         links_list: list[str] = []
         async for message in r.aiter_bytes():
             data_dict = json.loads(message.decode())
@@ -64,7 +64,7 @@ def server(input: Inputs, output: Outputs, session: Session) -> None:
             "POST", f"http://{SERVER_HOST}:{SERVER_PORT}/llm/stream", json=payload
         )
         r = await client.send(req, stream=True)
-        response_iter = respone_to_iterator(r)
+        response_iter = response_to_iterator(r)
         await chat.append_message_stream(response_iter)
 
 
