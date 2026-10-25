@@ -4,84 +4,109 @@
 #
 #    pip-compile --output-file=requirements.txt requirements.in
 #
-anyio==4.14.2
+annotated-types==0.8.0
+    # via pydantic
+anyio==4.15.1
     # via
     #   httpx2
     #   starlette
     #   watchfiles
-appdirs==1.4.4
+asgiref==3.13.0
     # via shiny
-asgiref==3.8.1
-    # via shiny
-attrs==24.2.0
+attrs==26.1.0
     # via environ-config
-click==8.1.7
+click==8.5.0
     # via
     #   shiny
     #   uvicorn
-environ-config==24.1.0
+environ-config==26.1.0
     # via -r requirements.in
 h11==0.16.0
     # via
     #   httpcore2
     #   uvicorn
-htmltools==0.5.3
-    # via shiny
-httpcore2==2.12.0
+htmltools==0.7.0
+    # via
+    #   shiny
+    #   shinychat
+httpcore2==2.16.0
     # via httpx2
-httpx2==2.12.0
+httpx2==2.16.0
     # via -r requirements.in
-idna==3.19
+idna==3.20
     # via
     #   anyio
     #   httpx2
-linkify-it-py==2.0.3
+libsass==0.23.0
+    # via shinychat
+linkify-it-py==2.2.0
     # via shiny
-markdown-it-py==3.0.0
+markdown-it-py==4.2.0
     # via
     #   mdit-py-plugins
     #   shiny
-mdit-py-plugins==0.4.2
+mdit-py-plugins==0.6.1
     # via shiny
 mdurl==0.1.2
     # via markdown-it-py
-msgspec==0.18.6
+msgspec==0.22.0
     # via -r requirements.in
-packaging==24.1
+narwhals==2.27.1
+    # via shiny
+opentelemetry-api==1.45.1
+    # via shiny
+orjson==3.13.0
+    # via shiny
+packaging==26.3
     # via
     #   htmltools
     #   shiny
-prompt-toolkit==3.0.36
+platformdirs==4.13.5
+    # via shiny
+prompt-toolkit==3.0.53
     # via
     #   questionary
     #   shiny
-python-multipart==0.0.12
+pydantic==2.14.1
+    # via shinychat
+pydantic-core==2.50.1
+    # via pydantic
+python-multipart==0.0.32
     # via shiny
-questionary==2.0.1
+questionary==2.1.1
     # via shiny
-shiny==1.1.0
-    # via -r requirements.in
-starlette==0.39.2
+shiny==1.8.0
+    # via
+    #   -r requirements.in
+    #   shinychat
+shinychat==0.7.2
     # via shiny
-truststore==0.10.4
+starlette==1.10.0
+    # via shiny
+truststore==0.10.5
     # via
     #   httpcore2
     #   httpx2
-typing-extensions==4.12.2
+typing-extensions==4.16.0
     # via
     #   anyio
     #   htmltools
     #   httpx2
+    #   opentelemetry-api
+    #   pydantic
+    #   pydantic-core
     #   shiny
-uc-micro-py==1.0.3
-    # via linkify-it-py
-uvicorn==0.31.1
+    #   starlette
+    #   typing-inspection
+typing-inspection==0.4.4
+    # via pydantic
+uvicorn==0.54.0
     # via shiny
-watchfiles==0.24.0
+watchfiles==1.3.0
     # via shiny
-wcwidth==0.2.13
+wcwidth==0.9.4
     # via prompt-toolkit
-websockets==13.1
+websockets==17.3
     # via shiny
 
 # The following packages are considered to be unsafe in a requirements file:
