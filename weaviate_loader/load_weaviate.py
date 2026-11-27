@@ -1,14 +1,21 @@
-import traceback
+from dataclasses import replace
+from time import perf_counter, sleep
 from typing import Any
 
+import httpx2
 import pandas as pd
+from constants import DOCUMENT_COLLECTION_PROPERTIES
 from appconfig import config
+from haystack.dataclasses.document import Document
+from haystack_integrations.components.embedders.huggingface_api import (
+    HuggingFaceAPIDocumentEmbedder,
+)
+from haystack_integrations.document_stores.weaviate import WeaviateDocumentStore
 from llama_index.core import SimpleDirectoryReader
 from llama_index.core.node_parser import MarkdownNodeParser
 from llama_index.core.schema import MetadataMode
-from teiembedding import TextEmbeddingsInference
 
-import weaviate
+# from teiembedding import TextEmbeddingsInference
 
 WEAVIATE_HOST = config.weaviate_host
 WEAVIATE_PORT = config.weaviate_port
@@ -17,74 +24,89 @@ TEI_PORT = config.tei_port
 EMBEDDING_MODEL = config.model
 
 
+def wait_for_service(url: str, service: str, timeout: int = 300) -> None:
+    deadline = perf_counter() + timeout
+    last_error = None
+
+    while perf_counter() < deadline:
+        try:
+            response = httpx2.get(url, timeout=5)
+            if response.status_code == 200:
+                return
+            last_error = RuntimeError(f"HTTP {response.status_code}")
+        except httpx2.ConnectError as error:
+            last_error = error
+        sleep(2)
+
+    raise TimeoutError(
+        f"{service} did not become ready at {url} within {timeout} seconds"
+    ) from last_error
+
+
 def load_db():
     collection_name = "document_collection"
-    client = None
-    try:
-        client = weaviate.connect_to_local(host=WEAVIATE_HOST, port=int(WEAVIATE_PORT))
+    weaviate_url = f"http://{WEAVIATE_HOST}:{WEAVIATE_PORT}"
+    wait_for_service(f"{weaviate_url}/v1/.well-known/ready", "Weaviate")
+    tei_url = f"http://{TEI_HOST}:{TEI_PORT}"
 
-        if client.collections.exists(collection_name):
-            collection = client.collections.get(collection_name)
-            count = 0
-            for _ in collection.iterator():
-                count += 1
-            if count > 0:
-                client.close()
-                return
 
-        documents = SimpleDirectoryReader("documents", recursive=True).load_data()
+    weaviate_store = WeaviateDocumentStore(
+        url=weaviate_url,
+        collection_settings={
+            "class": collection_name,
+            "properties": DOCUMENT_COLLECTION_PROPERTIES,
+            "vectorIndexType": "hnsw",
+            "vectorIndexConfig": {"distance": "cosine"},
+            "vectorizer": "none",
+        },
+    )
+    num_documents = weaviate_store.count_documents()
+    if num_documents > 0:
+        return
 
-        splitter = MarkdownNodeParser()
+    wait_for_service(f"{tei_url}/health", "Text Embeddings Inference")
+    documents = SimpleDirectoryReader("documents", recursive=True).load_data()
 
-        nodes = splitter.get_nodes_from_documents(documents, show_progress=True)
+    splitter = MarkdownNodeParser()
 
-        texts = [node.get_content(metadata_mode=MetadataMode.NONE) for node in nodes]
+    nodes = splitter.get_nodes_from_documents(documents, show_progress=True)
 
-        metadata_lst: list[dict[str, Any]] = []
-        word = "documents"
-        url = "https://docs.pola.rs/user-guide"
+    texts = [node.get_content(metadata_mode=MetadataMode.NONE) for node in nodes]
 
-        for node in nodes:
-            node.get_content()
-            meta = node.metadata | {
-                "text": node.get_content(metadata_mode=MetadataMode.NONE)
-            }
-            file_path = node.metadata["file_path"]
-            start_idx = file_path.find(word) + len(word)
-            link = url + file_path[start_idx:-8]
-            meta = meta | {"link": link} | {"embedding_model": EMBEDDING_MODEL}
+    metadata_lst: list[dict[str, Any]] = []
+    word = "documents"
+    url = "https://docs.pola.rs/user-guide"
 
-            metadata_lst.append(meta)
+    for node in nodes:
+        node_text = node.get_content(metadata_mode=MetadataMode.NONE)
+        meta = node.metadata | {
+            "text": node_text
+        }
+        for date_field in ("creation_date", "last_modified_date"):
+            if meta.get(date_field) is not None:
+                meta[date_field] = pd.to_datetime(
+                    meta[date_field], utc=True
+                ).to_pydatetime()
+        file_path = node.metadata["file_path"]
+        start_idx = file_path.find(word) + len(word)
+        link = url + file_path[start_idx:-8]
+        meta = meta | {"link": link} | {"embedding_model": EMBEDDING_MODEL}
 
-        documents = client.collections.get(collection_name)
+        metadata_lst.append(meta)
 
-        tei_url = f"http://{TEI_HOST}:{TEI_PORT}"
-        embedding_model = TextEmbeddingsInference(url=tei_url, normalize=True)
-        embeddings = embedding_model.embed_documents(texts)
+    text_embedder = HuggingFaceAPIDocumentEmbedder(
+        api_type="text_embeddings_inference",
+        api_params={"url": tei_url},
+    )
+    docs_lst = [Document(content=text) for text in texts]
+    docs_lst = text_embedder.run(documents=docs_lst)["documents"]
 
-        # Enter context manager
-        with documents.batch.dynamic() as batch:
-            # Loop through the data
-            for idx, doc in enumerate(metadata_lst):
-                # Convert data types
+    docs_lst = [
+        replace(document, meta=metadata)
+        for document, metadata in zip(docs_lst, metadata_lst)
+    ]
 
-                for k, v in doc.items():
-                    if "date" in k:
-                        doc[k] = pd.to_datetime(v, utc=True).to_pydatetime()
-
-                # Add object to batch queue
-                batch.add_object(properties=doc, vector=embeddings[idx])
-                # Batcher automatically sends batches
-
-        # Check for failed objects
-        if len(documents.batch.failed_objects) > 0:
-            print(f"Failed to import {len(documents.batch.failed_objects)} objects")
-    except Exception as e:
-        print(e)
-        print(traceback.format_exc())
-    finally:
-        if client is not None:
-            client.close()
+    weaviate_store.write_documents(docs_lst)
 
 
 if __name__ == "__main__":

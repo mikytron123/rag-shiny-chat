@@ -1,8 +1,14 @@
-weaviate-client
 llama-index-core
 llama-index-readers-file
 httpx2
+haystack-ai
+huggingface-api-haystack
+weaviate-haystack
+deprecated<3
+networkx<3.7
+numpy<2.5
+python-dateutil<4
+soupsieve<3
 pandas
 pydantic
 environ-config
-

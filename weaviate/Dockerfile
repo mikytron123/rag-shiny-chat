@@ -1,4 +1,4 @@
-FROM cr.weaviate.io/semitechnologies/weaviate:1.30.0
+FROM cr.weaviate.io/semitechnologies/weaviate:1.41.0
 
 COPY . .
 
